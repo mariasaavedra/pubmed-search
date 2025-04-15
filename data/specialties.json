@@ -1,0 +1,146 @@
+{
+  "cardiology": {
+    "common_topics": [
+      "heart failure",
+      "hypertension",
+      "coronary artery disease",
+      "arrhythmia",
+      "myocardial infarction",
+      "heart valve diseases",
+      "cardiomyopathy",
+      "cardiac rehabilitation"
+    ],
+    "mesh_terms": [
+      "Cardiovascular Diseases",
+      "Heart Diseases",
+      "Vascular Diseases"
+    ],
+    "default_filters": ["Therapy", "Diagnosis"]
+  },
+  "neurology": {
+    "common_topics": [
+      "stroke",
+      "epilepsy",
+      "multiple sclerosis",
+      "parkinsons disease",
+      "alzheimers disease",
+      "migraine",
+      "peripheral neuropathy",
+      "neurodegenerative diseases"
+    ],
+    "mesh_terms": [
+      "Nervous System Diseases",
+      "Central Nervous System Diseases",
+      "Neurodegenerative Diseases"
+    ],
+    "default_filters": ["Diagnosis", "Prognosis"]
+  },
+  "oncology": {
+    "common_topics": [
+      "breast cancer",
+      "lung cancer",
+      "prostate cancer",
+      "colorectal cancer",
+      "leukemia",
+      "lymphoma",
+      "immunotherapy",
+      "targeted therapy"
+    ],
+    "mesh_terms": [
+      "Neoplasms",
+      "Carcinoma",
+      "Antineoplastic Agents"
+    ],
+    "default_filters": ["Therapy", "Prognosis"]
+  },
+  "endocrinology": {
+    "common_topics": [
+      "diabetes mellitus",
+      "thyroid disorders",
+      "adrenal disorders",
+      "pituitary disorders",
+      "osteoporosis",
+      "metabolic syndrome",
+      "obesity",
+      "hormone replacement therapy"
+    ],
+    "mesh_terms": [
+      "Endocrine System Diseases",
+      "Diabetes Mellitus",
+      "Metabolic Diseases"
+    ],
+    "default_filters": ["Therapy", "Diagnosis"]
+  },
+  "gastroenterology": {
+    "common_topics": [
+      "inflammatory bowel disease",
+      "irritable bowel syndrome",
+      "liver diseases",
+      "pancreatitis",
+      "gastroesophageal reflux",
+      "celiac disease",
+      "gastrointestinal bleeding",
+      "colorectal cancer screening"
+    ],
+    "mesh_terms": [
+      "Digestive System Diseases",
+      "Gastrointestinal Diseases",
+      "Liver Diseases"
+    ],
+    "default_filters": ["Diagnosis", "Therapy"]
+  },
+  "psychiatry": {
+    "common_topics": [
+      "depression",
+      "anxiety disorders",
+      "bipolar disorder",
+      "schizophrenia",
+      "post-traumatic stress disorder",
+      "substance use disorders",
+      "attention deficit hyperactivity disorder",
+      "eating disorders"
+    ],
+    "mesh_terms": [
+      "Mental Disorders",
+      "Mood Disorders",
+      "Anxiety Disorders"
+    ],
+    "default_filters": ["Therapy", "Diagnosis"]
+  },
+  "infectious_diseases": {
+    "common_topics": [
+      "covid-19",
+      "antimicrobial resistance",
+      "hiv",
+      "tuberculosis",
+      "sepsis",
+      "pneumonia",
+      "viral hepatitis",
+      "tropical diseases"
+    ],
+    "mesh_terms": [
+      "Communicable Diseases",
+      "Virus Diseases",
+      "Bacterial Infections"
+    ],
+    "default_filters": ["Therapy", "Diagnosis"]
+  },
+  "rheumatology": {
+    "common_topics": [
+      "rheumatoid arthritis",
+      "systemic lupus erythematosus",
+      "osteoarthritis",
+      "gout",
+      "ankylosing spondylitis",
+      "vasculitis",
+      "sjogrens syndrome",
+      "fibromyalgia"
+    ],
+    "mesh_terms": [
+      "Rheumatic Diseases",
+      "Autoimmune Diseases",
+      "Collagen Diseases"
+    ],
+    "default_filters": ["Therapy", "Diagnosis"]
+  }
+}
