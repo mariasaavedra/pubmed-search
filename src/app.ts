@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import articleRoutes from './routes/article-routes';
 import { PUBMED_CONFIG } from './config/pubmed-config';
+import { Logger } from './utils/logger';
+import { requestLogger } from './middlewares/request-logger';
 
 // Load environment variables
 dotenv.config();
@@ -17,10 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 // Request logging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
+app.use(requestLogger);
 
 // Routes
 app.use('/api', articleRoutes);
@@ -57,8 +56,7 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(`Error: ${err.message}`);
-  console.error(err.stack);
+  Logger.error('Server', `Unhandled error: ${err.message}`, err);
   
   res.status(500).json({
     error: 'Internal Server Error',
@@ -68,9 +66,18 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 // Start the server
 app.listen(port, () => {
-  console.log(`PubMed Clinical Article Retriever API running on port ${port}`);
-  console.log(`Health check available at http://localhost:${port}/health`);
-  console.log(`API documentation available at http://localhost:${port}/`);
+  Logger.success('Server', `PubMed Clinical Article Retriever API running on port ${port}`);
+  Logger.info('Server', `Health check: http://localhost:${port}/health`);
+  Logger.info('Server', `API documentation: http://localhost:${port}/`);
+  
+  // Log environment details
+  Logger.debug('Config', 'Environment configuration loaded', {
+    env: process.env.NODE_ENV || 'development',
+    rate_limits: {
+      requests_per_second: 1000 / PUBMED_CONFIG.rate_limit.min_time,
+      max_concurrent: PUBMED_CONFIG.rate_limit.max_concurrent
+    }
+  });
 });
 
 export default app;

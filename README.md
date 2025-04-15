@@ -16,7 +16,6 @@ This application serves as a backend service that:
 - NodeJS
 - npm or yarn
 
-
 ## Configuration
 
 See pubmed.config.js for API keys and settings.
@@ -40,7 +39,7 @@ Retrieves articles based on a clinical blueprint.
 ```json
 {
   "specialty": "Cardiology",
-  "topic": "SGLT2 Inhibitors",
+  "topic": "SGLT2 Inhibitors"
 }
 ```
 
@@ -65,26 +64,31 @@ Retrieves articles based on a clinical blueprint.
 ## Project Structure
 
 ```
-pubmed-search
-├── config/
-│   └── pubmed.config.ts     # PubMed API configuration
+pubmed-search/
+├── data/
+│   ├── specialties.json      # Specialty data with topics and MeSH terms
+│   └── journal-metrics.json  # Journal impact factors and metrics
 ├── src/
+│   ├── app.ts                # Main Express application
+│   ├── config/
+│   │   └── pubmed-config.ts  # PubMed API configuration
 │   ├── controllers/
-│   │   └── article.controller.ts
-│   ├── services/
-│   │   ├── blueprint.service.ts   # Blueprint processing
-│   │   ├── pubmed.service.ts      # PubMed API interaction
-│   │   ├── query.service.ts       # Query construction
-│   │   └── ranking.service.ts     # Article scoring and ranking
-│   ├── utils/
-│   │   ├── mesh-mapper.ts         # MeSH term mapping
-│   │   └── rate-limiter.ts        # API rate limiting (10 requests/second for E-utilities if using a key)
+│   │   └── article-controller.ts
 │   ├── routes/
-│   │   └── article.routes.ts
-│   └── app.ts                     # Express application
-├── .env
-├── package.json
-└── README.md
+│   │   └── article-routes.ts
+│   ├── services/
+│   │   ├── blueprint-service.ts   # Blueprint processing
+│   │   ├── pubmed-service.ts      # PubMed API interaction
+│   │   ├── query-service.ts       # Query construction
+│   │   └── ranking-service.ts     # Article scoring and ranking
+│   ├── types/
+│   │   └── index.ts               # TypeScript interfaces
+│   └── utils/
+│       ├── file-reader.ts         # JSON data loading
+│       ├── mesh-mapper.ts         # MeSH term mapping
+│       └── rate-limiter.ts        # API rate limiting
+├── tsconfig.json
+└── package.json
 ```
 
 ## Core Components
@@ -112,7 +116,12 @@ Scores articles based on relevance, journal quality, and structural characterist
 ```json
 {
   "specialty": "Endocrinology",
-  "topics": ["Thyroid Nodules", "Thyroid Cancer", "Thyroid Function Tests", "Thyroiditis"],
+  "topics": [
+    "Thyroid Nodules",
+    "Thyroid Cancer",
+    "Thyroid Function Tests",
+    "Thyroiditis"
+  ]
 }
 ```
 
@@ -142,6 +151,49 @@ Create a new scoring module in `src/services/ranking/` and register it in `ranki
 ### Supporting New Specialties
 
 Update the specialty-specific configurations in `config/specialties/`.
+
+Features Implemented
+Blueprint Processing: Normalizes and validates specialty and topic inputs, handling aliases and applying default filters when needed.
+
+Query Construction: Builds optimized PubMed search queries using MeSH terms, filters, and date ranges.
+
+PubMed API Integration: Interacts with PubMed's E-utilities API with proper rate limiting and pagination.
+
+Article Ranking: Scores articles based on relevance to the search topics and journal quality metrics.
+
+RESTful API:
+
+POST /api/articles - Retrieve articles based on specialty and topics
+GET /api/specialties - Get all available specialties
+GET /api/specialties/:specialty/topics - Get suggested topics for a specialty
+Running the Application
+
+# Build the TypeScript code
+
+npm run build
+
+# Start the server
+
+npm start
+
+# Start with auto-reload for development
+
+npm run dev
+The server will be available at http://localhost:3000 with complete API documentation at the root endpoint.
+
+Example API Request
+POST /api/articles
+{
+"specialty": "cardiology",
+"topics": ["heart failure", "hypertension"],
+"filters": {
+"study_types": ["Therapy", "Diagnosis"],
+"year_range": 5
+},
+"page": 1,
+"limit": 10
+}
+This will return ranked articles related to heart failure and hypertension from high-quality cardiology journals, published within the last 5 years.
 
 ## License
 

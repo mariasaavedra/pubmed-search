@@ -1,5 +1,6 @@
 import FileReader from '../utils/file-reader';
 import { ArticleRequest, ProcessedBlueprint } from '../types';
+import { Logger } from '../utils/logger';
 
 /**
  * Service for processing clinical blueprints
@@ -13,6 +14,7 @@ class BlueprintService {
 
   constructor() {
     this.specialties = FileReader.GetSpecialties();
+    Logger.debug('BlueprintService', `Initialized with ${Object.keys(this.specialties).length} specialties`);
   }
 
   /**
@@ -21,20 +23,26 @@ class BlueprintService {
    * @returns Processed blueprint
    */
   public ProcessBlueprint(request: ArticleRequest): ProcessedBlueprint {
+    Logger.debug('BlueprintService', `Processing blueprint request`, request);
+    
     // Normalize and validate inputs
     const normalized_specialty = this.NormalizeSpecialty(request.specialty);
+    Logger.debug('BlueprintService', `Normalized specialty: ${request.specialty} -> ${normalized_specialty}`);
+    
     const normalized_topics = this.NormalizeTopics(request.topics);
+    Logger.debug('BlueprintService', `Normalized ${request.topics.length} topics -> ${normalized_topics.length} unique topics`);
     
     // Verify specialty exists
     if (!this.ValidateSpecialty(normalized_specialty)) {
+      Logger.error('BlueprintService', `Invalid specialty: ${normalized_specialty}`);
       throw new Error(`Invalid specialty: ${normalized_specialty}`);
     }
 
     // Set default filters if not provided, or use the provided ones
     const study_types = request.filters?.study_types || 
       this.specialties[normalized_specialty].default_filters;
-
-    return {
+    
+    const blueprint: ProcessedBlueprint = {
       specialty: normalized_specialty,
       topics: normalized_topics,
       filters: {
@@ -43,6 +51,9 @@ class BlueprintService {
         year_range: request.filters?.year_range || 3 // Default to last 3 years
       }
     };
+    
+    Logger.debug('BlueprintService', `Blueprint processed successfully`, blueprint);
+    return blueprint;
   }
 
   /**
