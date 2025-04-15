@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-
 /**
  * Available log levels
  */
