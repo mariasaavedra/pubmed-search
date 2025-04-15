@@ -49,9 +49,9 @@ class QueryService {
       return `(${mesh_query})`;
     });
 
-    // Join topics with OR if multiple topics
+    // Join topics with AND (since we want articles that mention both topics)
     return topics.length > 1 
-      ? topic_queries.map(q => `(${q})`).join(' AND ') 
+      ? `(${topic_queries.join(' AND ')})` 
       : topic_queries[0];
   }
 
@@ -70,6 +70,8 @@ class QueryService {
         .map(type => FILTER_MAP[type as keyof typeof FILTER_MAP].broad);
       
       if (study_filters.length > 0) {
+        // Each filter is already wrapped in parentheses from the config
+        // Just join them with OR and wrap the whole thing
         filter_parts.push(`(${study_filters.join(' OR ')})`);
       }
     } else {
@@ -96,15 +98,64 @@ class QueryService {
    * @returns True if the query is valid
    */
   public ValidateQuery(query: string): boolean {
-    // Basic validation - check for balanced parentheses and minimum length
+    // Check minimum query length
     if (query.length < 10) {
+      console.log('Query validation failed: Too short');
       return false;
     }
+
+    // Check for balanced parentheses using a stack
+    const stack: string[] = [];
+    for (const char of query) {
+      if (char === '(') {
+        stack.push(char);
+      } else if (char === ')') {
+        if (stack.length === 0) {
+          console.log('Query validation failed: Unmatched closing parenthesis');
+          return false;
+        }
+        stack.pop();
+      }
+    }
+    if (stack.length !== 0) {
+      console.log(`Query validation failed: ${stack.length} unclosed parentheses`);
+      return false;
+    }
+
+    // Validate PubMed field tags
+    const validTags = [
+      'MeSH Terms', 'Title/Abstract', 'All Fields', 'Publication Type',
+      'Text Word', 'Language', 'mh', 'pt', 'PDat', 'MeSH Subheading',
+      'MeSH:noexp', 'noexp'
+    ];
+    const tagPattern = /\[(.*?)\]/g;
+    const matches = query.match(tagPattern);
     
-    const open_count = (query.match(/\(/g) || []).length;
-    const close_count = (query.match(/\)/g) || []).length;
-    
-    return open_count === close_count;
+    if (matches) {
+      for (const match of matches) {
+        const tag = match.slice(1, -1); // Remove brackets
+        if (!validTags.some(validTag => tag.includes(validTag))) {
+          console.log(`Query validation failed: Invalid field tag "${tag}"`);
+          return false;
+        }
+      }
+    }
+
+    // Check basic query structure
+    if (!query.includes('AND') && !query.includes('OR')) {
+      console.log('Query validation failed: Missing boolean operators');
+      return false;
+    }
+
+    // Ensure query doesn't end with operators
+    if (/AND\s*$/.test(query) || /OR\s*$/.test(query)) {
+      console.log('Query validation failed: Query ends with an operator');
+      return false;
+    }
+
+    // Print the final query for inspection
+    console.log('Validated query:', query);
+    return true;
   }
 
   /**
