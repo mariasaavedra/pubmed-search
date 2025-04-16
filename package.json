@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@xmldom/xmldom": "^0.9.8",
     "axios": "^1.6.2",
     "chalk": "^4",
     "cors": "^2.8.5",

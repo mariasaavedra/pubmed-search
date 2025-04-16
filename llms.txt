@@ -33,3 +33,97 @@
 - [UML Unified API Reference](https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/entrez/eutils/)
 - [NCBI API Key Instructions](https://www.ncbi.nlm.nih.gov/account/settings/)
 
+--- 
+```md
+# @xmldom/xmldom
+
+> A pure JavaScript W3C standard-based (XML DOM Level 2 Core) `DOMParser` and `XMLSerializer` module. Enables XML parsing, manipulation, and serialization in Node.js and other JavaScript environments.
+
+## 
+
+- [npm Package](https://www.npmjs.com/package/@xmldom/xmldom)
+- [GitHub Repository](https://github.com/xmldom/xmldom)
+- [Changelog](https://github.com/xmldom/xmldom/blob/master/CHANGELOG.md)
+- [Type Definitions](https://github.com/xmldom/xmldom/blob/master/index.d.ts)
+
+## Usage
+
+- [Installation](https://www.npmjs.com/package/@xmldom/xmldom#install)
+
+  ```bash
+  npm install @xmldom/xmldom
+  ```
+
+- [Basic Parsing and Serialization](https://www.npmjs.com/package/@xmldom/xmldom#example)
+
+  ```javascript
+  const { DOMParser, XMLSerializer } = require('@xmldom/xmldom');
+
+  const xml = `<note><to>User</to><from>AI</from><message>Hello World</message></note>`;
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  const serialized = new XMLSerializer().serializeToString(doc);
+  console.log(serialized);
+  ```
+
+- [TypeScript Support](https://www.npmjs.com/package/@xmldom/xmldom#example)
+
+  ```typescript
+  import { DOMParser } from '@xmldom/xmldom';
+
+  const doc = new DOMParser().parseFromString('<root><child/></root>', 'application/xml');
+  ```
+
+## API Reference
+
+- [DOMParser](https://developer.mozilla.org/en-US/docs/Web/API/DOMParser)
+  - `parseFromString(xmlString, mimeType)`: Parses XML string into a DOM Document.
+
+- [XMLSerializer](https://developer.mozilla.org/en-US/docs/Web/API/XMLSerializer)
+  - `serializeToString(node)`: Serializes DOM node back into XML string.
+
+- [Supported Interfaces](https://www.npmjs.com/package/@xmldom/xmldom#api-reference)
+  - `Attr`, `CDATASection`, `CharacterData`, `Comment`, `Document`, `DocumentFragment`, `DocumentType`, `DOMException`, `DOMImplementation`, `Element`, `Entity`, `EntityReference`, `NamedNodeMap`, `Node`, `NodeList`, `Notation`, `ProcessingInstruction`, `Text`
+
+## Examples
+
+- [CodeSandbox Examples](https://codesandbox.io/examples/package/@xmldom/xmldom)
+- [GitHub Gist: Reading and Updating XML Nodes](https://gist.github.com/DinoChiesa/dba1fca8748ffcd47d41ddef91016625)
+
+## Optional
+
+- [W3C DOM Level 2 Core Specification](https://www.w3.org/TR/DOM-Level-2-Core/)
+- [W3C DOM Parsing and Serialization](https://www.w3.org/TR/DOM-Parsing/)
+- [W3Schools XML DOM Tutorial](https://www.w3schools.com/xml/xml_dom.asp)
+``` 
+# jsdom
+
+> A pure JavaScript implementation of many web standards, notably the WHATWG DOM and HTML specifications, for use in Node.js environments. Enables DOM manipulation, parsing, and scripting outside of a browser.
+
+## 
+
+- [GitHub Repo](https://github.com/jsdom/jsdom)
+- [README](https://github.com/jsdom/jsdom#readme)
+- [Changelog](https://github.com/jsdom/jsdom/blob/main/Changelog.md)
+- [Contributing Guide](https://github.com/jsdom/jsdom/blob/main/Contributing.md)
+
+## Usage
+
+- [Basic usage](https://github.com/jsdom/jsdom#basic-usage): How to instantiate and use `JSDOM`
+- [Customizing jsdom](https://github.com/jsdom/jsdom#customizing-jsdom): Options like `url`, `referrer`, `contentType`, `includeNodeLocations`
+- [Executing scripts](https://github.com/jsdom/jsdom#executing-scripts): `runScripts`, virtual console, `resources` options
+- [Loading external resources](https://github.com/jsdom/jsdom#loading-subresources): Resource loader setup
+- [Virtual console](https://github.com/jsdom/jsdom#virtual-consoles): Forward browser logs to Node
+- [Creating custom DOMs](https://github.com/jsdom/jsdom#customizing-jsdom): Emulate browser-like environments
+
+## Examples
+
+- [Minimal Example](https://github.com/jsdom/jsdom#basic-usage)
+- [With External URL and Script Execution](https://github.com/jsdom/jsdom#executing-scripts)
+- [Advanced Configuration with Virtual Console](https://github.com/jsdom/jsdom#virtual-consoles)
+
+## Optional
+
+- [jsdom-global](https://github.com/rstacruz/jsdom-global): Automatically injects jsdom into the Node.js global context
+- [jsdom’s test suite](https://github.com/jsdom/jsdom/tree/main/test): Internal examples and standards conformance
+- [WhatWG DOM spec](https://dom.spec.whatwg.org/)
+- [HTML spec](https://html.spec.whatwg.org/)
