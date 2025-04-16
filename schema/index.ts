@@ -22,13 +22,13 @@ type Article = {
   references: string[]; // Array of references
   url: string; // URL of the article
   pdf_url: string; // URL of the PDF
-  full_text: string; // Full text of the article
-  figures: string[]; // Array of figure URLs
-  tables: string[]; // Array of table URLs
-  supplementary_material: string[]; // Array of supplementary material URLs
-  data_sets: string[]; // Array of data set URLs
-  methods: string; // Methods used in the article
-  results: string; // Results of the article
-  discussion: string; // Discussion of the article
-  conclusion: string; // Conclusion of the article
+  full_text?: string; // Full text of the article
+  figures?: string[]; // Array of figure URLs
+  tables?: string[]; // Array of table URLs
+  supplementary_material?: string[]; // Array of supplementary material URLs
+  data_sets?: string[]; // Array of data set URLs
+  methods?: string; // Methods used in the article
+  results?: string; // Results of the article
+  discussion?: string; // Discussion of the article
+  conclusion?: string; // Conclusion of the article
 };

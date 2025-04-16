@@ -183,6 +183,14 @@ export interface ParsedArticleData {
   pub_date: string;
   abstract: string;
   url: string;
+  full_text?: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures?: string[];
+  tables?: string[];
+  supplementary_material?: string[];
 }
 
 export interface RankedArticleData extends ParsedArticleData {

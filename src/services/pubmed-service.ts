@@ -3,6 +3,7 @@ import { parseStringPromise } from "xml2js";
 import dotenv from "dotenv";
 import { PUBMED_CONFIG } from "../config/pubmed-config";
 import RateLimiter from "../utils/rate-limiter";
+import ArticleContentService from "./article-content-service";
 import {
   PubmedSearchResponse,
   PubmedSummaryResponse,
@@ -21,6 +22,7 @@ class PubmedService {
   private base_url: string;
   private api_key: string | undefined;
   private rate_limiter: RateLimiter;
+  private content_service: ArticleContentService;
 
   constructor() {
     this.base_url = PUBMED_CONFIG.base_url;
@@ -31,6 +33,9 @@ class PubmedService {
       PUBMED_CONFIG.rate_limit.max_concurrent,
       PUBMED_CONFIG.rate_limit.min_time
     );
+
+    // Initialize content service
+    this.content_service = new ArticleContentService();
 
     Logger.debug("PubmedService", "Initialized with configuration", {
       base_url: this.base_url,
@@ -174,7 +179,7 @@ class PubmedService {
       const xml_data = await this.ParseXml(response.data);
 
       // Extract article data
-      const articles = this.ExtractArticleData(xml_data);
+      const articles = await this.ExtractArticleData(xml_data);
       Logger.debug(
         "PubmedService",
         `Successfully extracted ${articles.length} article details`
@@ -217,7 +222,7 @@ class PubmedService {
    * @param data PubMed response data
    * @returns Array of parsed article data
    */
-  private ExtractArticleData(data: PubmedFetchResponse): ParsedArticleData[] {
+  private async ExtractArticleData(data: PubmedFetchResponse): Promise<ParsedArticleData[]> {
     if (!data.PubmedArticleSet || !data.PubmedArticleSet.PubmedArticle) {
       return [];
     }
@@ -227,7 +232,7 @@ class PubmedService {
       ? data.PubmedArticleSet.PubmedArticle
       : [data.PubmedArticleSet.PubmedArticle];
 
-    return articles.map((article) => {
+    return Promise.all(articles.map(async (article) => {
       const citation = article.MedlineCitation;
       const article_data = citation.Article;
       const pmid = citation.PMID;
@@ -289,7 +294,7 @@ class PubmedService {
         }
       }
 
-      return {
+      const baseArticle = {
         pmid,
         title: article_data.ArticleTitle || "",
         authors,
@@ -298,7 +303,35 @@ class PubmedService {
         abstract,
         url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
       };
-    });
+
+      try {
+        // Extract full content
+        const content = await this.content_service.extractContentFromPubMed(pmid);
+        
+        const details = {
+          ...baseArticle,
+          full_text: content.full_text,
+          methods: content.methods,
+          results: content.results,
+          discussion: content.discussion,
+          conclusion: content.conclusion,
+          figures: content.figures,
+          tables: content.tables,
+          supplementary_material: content.supplementary_material,
+        };
+        Logger.debug("PubmedService", `Successfully extracted content for PMID ${pmid}`, {
+          details,
+        });
+        return details;
+      } catch (error) {
+        Logger.warn(
+          "PubmedService",
+          `Failed to extract full content for PMID ${pmid}, returning basic metadata only`,
+          error
+        );
+        return baseArticle;
+      }
+    }));
   }
 
   /**
