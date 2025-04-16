@@ -3,6 +3,8 @@ import QueryService from "./query-service";
 import PubmedService from "./pubmed-service";
 import EmbeddingService from "./embedding.service";
 import JournalRankingService from "./journal-ranking.service";
+import CategoryMapperService from "./category-mapper.service";
+import SpecialtyFilterService from "./specialty-filter.service";
 import { ArticleRequest, ArticleResponse, Article } from "../types";
 import { Logger } from "../utils/logger";
 
@@ -15,6 +17,8 @@ class ArticleService {
   private pubmed_service: PubmedService;
   private embedding_service: EmbeddingService;
   private journal_ranking: JournalRankingService;
+  private category_mapper: CategoryMapperService;
+  private specialty_filter: SpecialtyFilterService;
 
   constructor() {
     this.blueprint_service = new BlueprintService();
@@ -22,8 +26,10 @@ class ArticleService {
     this.pubmed_service = new PubmedService();
     this.embedding_service = new EmbeddingService();
     this.journal_ranking = new JournalRankingService();
+    this.category_mapper = new CategoryMapperService();
+    this.specialty_filter = new SpecialtyFilterService();
     
-    Logger.debug("ArticleService", "Initialized with relevance ranking and journal quality scoring");
+    Logger.debug("ArticleService", "Initialized with relevance ranking, journal quality scoring, and content categorization");
   }
 
   /**
@@ -79,6 +85,20 @@ class ArticleService {
       article.abstract && article.abstract.trim().length > 0
     );
     
+    // Add category information to articles
+    Logger.debug("ArticleService", "Adding category information to articles");
+    const categorizedArticles = this.category_mapper.processBatch(articlesWithAbstracts);
+    
+    // Apply specialty filter if specified
+    let filteredArticles = categorizedArticles;
+    if (article_request.filters?.specialty) {
+      Logger.debug("ArticleService", `Filtering by specialty: ${article_request.filters.specialty}`);
+      filteredArticles = this.specialty_filter.filterBySpecialty(
+        categorizedArticles,
+        article_request.filters.specialty
+      );
+    }
+    
     if (articlesWithAbstracts.length === 0) {
       Logger.info("ArticleService", "No articles with abstracts found");
       const duration = Date.now() - start_time;
@@ -97,7 +117,7 @@ class ArticleService {
     
     // Add journal quality scores
     Logger.debug("ArticleService", "Adding journal quality scores");
-    const articlesWithJournalScores = articlesWithAbstracts.map(article => ({
+    const articlesWithJournalScores = filteredArticles.map(article => ({
       ...article,
       scores: {
         ...article.scores,

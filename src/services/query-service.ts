@@ -1,16 +1,26 @@
 import { ProcessedBlueprint, QueryFilters } from "../types";
 import {
   DEFAULT_FILTER,
-  CORE_CLINICAL_JOURNALS_FILTER,
-  CARDIOLOGY_JOURNALS_FILTER
+  CORE_CLINICAL_JOURNALS_FILTER
 } from "../config/pubmed-config";
+import { PUBLICATION_TYPE_FILTER_MAP } from "../config/category-config";
 import { Logger } from "../utils/logger";
+import JournalDatabaseService from "./journal-database.service";
 
 /**
  * Service for constructing optimized PubMed search queries
  * Simplified to create more reliable and effective queries
  */
 class QueryService {
+  private journalDbService: JournalDatabaseService;
+  
+  constructor() {
+    this.journalDbService = new JournalDatabaseService();
+    // Initialize the journal database
+    this.journalDbService.initialize().catch(error => {
+      Logger.error("QueryService", "Failed to initialize journal database", error);
+    });
+  }
   /**
    * Build a complete PubMed search query based on a processed blueprint
    * @param blueprint The processed blueprint
@@ -29,14 +39,36 @@ class QueryService {
       // Determine the appropriate journal filter based on specialty
       let journalFilter = CORE_CLINICAL_JOURNALS_FILTER;
 
-      // For now, we just implement a cardiology-specific filter as an example
-      // This could be expanded to look up specialty-specific filters from a config file
-      if (blueprint.specialty && blueprint.specialty.toLowerCase() === 'cardiology') {
-        journalFilter = CARDIOLOGY_JOURNALS_FILTER;
+      // Use dynamic journal filter from the journal database if available
+      if (blueprint.specialty) {
+        const specialtyLower = blueprint.specialty.toLowerCase();
+        const specialtyJournals = this.journalDbService.getJournalsBySpecialty(specialtyLower);
+        
+        if (specialtyJournals && specialtyJournals.length > 0) {
+          const dynamicFilter = this.journalDbService.createPubMedJournalFilter(specialtyJournals);
+          if (dynamicFilter) {
+            Logger.info("QueryService", `Using dynamic journal filter for specialty: ${specialtyLower}`);
+            journalFilter = dynamicFilter;
+          }
+        } else {
+          Logger.info("QueryService", `No specialty journals found for ${specialtyLower}, using core clinical journals`);
+        }
+      }
+
+      // Add publication type filter if specified
+      let pubTypeFilter = "";
+      if (blueprint.filters.article_types && blueprint.filters.article_types.length > 0) {
+        pubTypeFilter = this.buildPublicationTypeFilter(blueprint.filters.article_types);
+        Logger.debug("QueryService", `Added publication type filter: ${pubTypeFilter}`);
       }
 
       // Combine the parts - always wrap components in parentheses for safety
-      const query = `(${searchTerm}) AND (${DEFAULT_FILTER.narrow}) AND (${dateFilter}) AND (${journalFilter})`;
+      let query = `(${searchTerm}) AND (${DEFAULT_FILTER.narrow}) AND (${dateFilter}) AND (${journalFilter})`;
+      
+      // Add publication type filter if available
+      if (pubTypeFilter) {
+        query += ` AND (${pubTypeFilter})`;
+      }
 
       Logger.debug(
         "QueryService",
@@ -55,6 +87,29 @@ class QueryService {
       Logger.error("QueryService", `Error building query: ${error}`);
       return `medicine AND "last 2 years"[PDat] AND English[Language]`;
     }
+  }
+
+  /**
+   * Build a filter string for publication types
+   * @param articleTypes Array of article type names to filter by
+   * @returns PubMed filter string for the specified article types
+   */
+  private buildPublicationTypeFilter(articleTypes: string[]): string {
+    if (!articleTypes || articleTypes.length === 0) {
+      return '';
+    }
+    
+    const filters = articleTypes
+      .map(type => PUBLICATION_TYPE_FILTER_MAP[type] || `"${type}"[Publication Type]`)
+      .filter(Boolean);
+      
+    if (filters.length === 0) {
+      return '';
+    }
+    
+    return filters.length === 1 
+      ? filters[0] 
+      : `(${filters.join(' OR ')})`;
   }
 
   /**

@@ -31,4 +31,16 @@ router.get('/api/specialties/:specialty/topics', (req, res) => controller.getSug
  */
 router.get('/api/specialties', (req, res) => controller.getSpecialties(req, res));
 
+/**
+ * @route GET /api/article-types
+ * @description Get all available article types for filtering
+ */
+router.get('/api/article-types', (req, res) => controller.getArticleTypes(req, res));
+
+/**
+ * @route GET /api/specialty-filters
+ * @description Get all available specialty filters for content filtering
+ */
+router.get('/api/specialty-filters', (req, res) => controller.getSpecialtyFilters(req, res));
+
 export default router;

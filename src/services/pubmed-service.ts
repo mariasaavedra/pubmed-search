@@ -1,7 +1,7 @@
-import { Document as XMLDocument } from '@xmldom/xmldom';
+import { Document as XMLDocument, Element as XMLElement } from '@xmldom/xmldom';
 import dotenv from "dotenv";
 import { PUBMED_CONFIG } from "../config/pubmed-config";
-import { Article, PubmedSearchResponse } from "../types";
+import { Article, MeshQualifier, PubmedSearchResponse } from "../types";
 import { Logger } from "../utils/logger";
 import EUtilitiesService from './e-utilities.service';
 
@@ -151,20 +151,31 @@ class PubmedService {
         
         const abstract = abstractParts.join(' ');
         
-        // Extract MeSH Terms
+        // Extract MeSH Terms and Qualifiers
         const meshTerms: string[] = [];
+        const meshQualifiers: MeshQualifier[] = [];
         const meshHeadingNodes = articleNode.getElementsByTagName('MeshHeading');
         
         for (let j = 0; j < meshHeadingNodes.length; j++) {
           const meshNode = meshHeadingNodes.item(j);
           if (!meshNode) continue;
           
-          const descriptorNode = meshNode.getElementsByTagName('DescriptorName').item(0);
-          if (descriptorNode) {
-            const meshTerm = descriptorNode.textContent;
-            if (meshTerm) {
-              meshTerms.push(meshTerm);
-            }
+          // Process mesh qualifiers (structured format)
+          const meshQualifier = this.extractMeshQualifier(meshNode);
+          if (meshQualifier.descriptor) {
+            meshQualifiers.push(meshQualifier);
+            meshTerms.push(meshQualifier.descriptor);
+          }
+        }
+        
+        // Extract publication types
+        const publicationTypes: string[] = [];
+        const pubTypeNodes = articleNode.getElementsByTagName('PublicationType');
+        
+        for (let j = 0; j < pubTypeNodes.length; j++) {
+          const pubTypeNode = pubTypeNodes.item(j);
+          if (pubTypeNode?.textContent) {
+            publicationTypes.push(pubTypeNode.textContent);
           }
         }
         
@@ -181,6 +192,8 @@ class PubmedService {
           abstract,
           url,
           mesh_terms: meshTerms.length > 0 ? meshTerms : undefined,
+          mesh_qualifiers: meshQualifiers.length > 0 ? meshQualifiers : undefined,
+          publication_type: publicationTypes.length > 0 ? publicationTypes : undefined,
           scores: {
             relevance: 0, // To be calculated later
             journal_impact: 0, // To be calculated later
@@ -287,6 +300,33 @@ class PubmedService {
     }
   }
   
+  /**
+   * Extract MeSH qualifiers from a MeSH heading node
+   * @param meshNode The XML node containing MeSH heading data
+   * @returns MeshQualifier object with descriptor, qualifiers, and major topic flag
+   */
+  private extractMeshQualifier(meshNode: XMLElement): MeshQualifier {
+    const descriptorNode = meshNode.getElementsByTagName('DescriptorName').item(0);
+    const descriptor = descriptorNode?.textContent || '';
+    const majorTopic = descriptorNode?.getAttribute('MajorTopicYN') === 'Y';
+    
+    const qualifiers: string[] = [];
+    const qualifierNodes = meshNode.getElementsByTagName('QualifierName');
+    
+    for (let i = 0; i < qualifierNodes.length; i++) {
+      const qualifierNode = qualifierNodes.item(i);
+      if (qualifierNode?.textContent) {
+        qualifiers.push(qualifierNode.textContent);
+      }
+    }
+    
+    return {
+      descriptor,
+      qualifiers,
+      major_topic: majorTopic
+    };
+  }
+
   /**
    * Find related articles for a given PMID
    * @param pmid PubMed ID to find related articles for

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import articleRoutes from "./routes/article-routes";
+import journalRoutes from "./routes/journal-routes";
 import ArticleController from "./controllers/article-controller";
 import { PUBMED_CONFIG } from "./config/pubmed-config";
 import { Logger } from "./utils/logger";
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 
 // Mount routes
 app.use(articleRoutes);
+app.use(journalRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -58,6 +60,13 @@ app.get("/", (req, res) => {
       specialties: "GET /api/specialties",
       topics: "GET /api/specialties/{specialty}/topics",
       "articles/specialty": "POST /api/articles/specialty",
+      // Journal Endpoints
+      journals: "GET /api/journals",
+      "journals/search": "GET /api/journals/search",
+      "journals/specialty": "GET /api/journals/specialty/{specialty}",
+      "journals/filter": "GET /api/journals/filter/{specialty}",
+      "journals/issn": "GET /api/journals/issn/{issn}",
+      "nlm/search": "GET /api/nlm/search",
     },
     config: {
       rate_limit: {

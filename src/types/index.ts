@@ -37,6 +37,8 @@ export interface ArticleRequest {
     clinical_queries?: string[];
     age_group?: string;
     year_range?: number;
+    specialty?: string;     // Specialty ID for filtering
+    article_types?: string[]; // Article types to filter by
   };
   page?: number;
   limit?: number;
@@ -57,6 +59,12 @@ export interface ArticleResponse {
   };
 }
 
+export interface MeshQualifier {
+  descriptor: string;                     // Main MeSH heading/descriptor
+  qualifiers: string[];                   // Qualifier terms like "therapy", "diagnosis", etc.
+  major_topic: boolean;                   // Whether this is marked as a major topic
+}
+
 export interface Article {
   pmid: string;
   title: string;
@@ -69,8 +77,14 @@ export interface Article {
     relevance: number;
     journal_impact: number;
   };
-  mesh_terms?: string[];  // MeSH terms associated with the article
-  full_text?: string;  // Full text content fetched from DOI or PubMed
+  mesh_terms?: string[];                  // MeSH terms associated with the article
+  mesh_qualifiers?: MeshQualifier[];      // Array of MeSH qualifiers with their descriptors
+  publication_type?: string[];            // PubMed publication types array
+  article_type?: string;                  // e.g., "Review", "Clinical Trial", "Guideline", "Case Report"
+  primary_category?: string;              // Primary category derived from MeSH terms
+  secondary_categories?: string[];        // Secondary categories
+  specialty_tags?: string[];              // Derived specialty tags
+  full_text?: string;                     // Full text content fetched from DOI or PubMed
   methods?: string;
   results?: string;
   discussion?: string;
@@ -138,6 +152,35 @@ export interface PubmedSummaryResponse {
   };
 }
 
+// Category mapping types
+export interface CategoryMapping {
+  id: string;                             // Category identifier
+  name: string;                           // Display name
+  description: string;                    // Short description of the category
+  color: string;                          // Hex color code for later UI integration
+  mesh_descriptors: string[];             // MeSH descriptors that map to this category
+  mesh_qualifiers?: string[];             // MeSH qualifiers that map to this category
+  publication_types?: string[];           // Publication types that map to this category
+  priority: number;                       // Sorting priority (lower numbers appear first)
+}
+
+export interface ArticleTypeDefinition {
+  id: string;                             // Type identifier
+  name: string;                           // Display name
+  description: string;                    // Short description
+  color: string;                          // Hex color code for later UI integration
+  pubmed_types: string[];                 // PubMed publication types that match this definition
+  priority: number;                       // Sorting priority
+}
+
+export interface SpecialtyFilter {
+  id: string;
+  name: string;
+  description: string;
+  mesh_terms: string[];
+  sub_specialties?: SpecialtyFilter[];
+}
+
 // Internal processing types
 export interface ProcessedBlueprint {
   specialty: string;
@@ -146,6 +189,7 @@ export interface ProcessedBlueprint {
     clinical_queries: string[];
     age_group?: string;
     year_range: number;
+    article_types?: string[];            // Filter by article types
   };
 }
 

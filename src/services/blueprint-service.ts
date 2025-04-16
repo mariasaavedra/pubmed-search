@@ -48,7 +48,8 @@ class BlueprintService {
       filters: {
         clinical_queries,
         age_group: request.filters?.age_group,
-        year_range: request.filters?.year_range || 3 // Default to last 3 years
+        year_range: request.filters?.year_range || 3, // Default to last 3 years
+        article_types: request.filters?.article_types // Include article types filter if provided
       }
     };
     

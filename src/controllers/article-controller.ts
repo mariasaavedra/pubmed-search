@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import ArticleService from "../services/article-service";
+import CategoryMapperService from "../services/category-mapper.service";
+import SpecialtyFilterService from "../services/specialty-filter.service";
+import { ARTICLE_TYPE_DEFINITIONS } from "../config/category-config";
 import { Logger } from "../utils/logger";
 
 /**
@@ -7,9 +10,13 @@ import { Logger } from "../utils/logger";
  */
 class ArticleController {
   private article_service: ArticleService;
+  private category_mapper: CategoryMapperService;
+  private specialty_filter: SpecialtyFilterService;
 
   constructor() {
     this.article_service = new ArticleService();
+    this.category_mapper = new CategoryMapperService();
+    this.specialty_filter = new SpecialtyFilterService();
   }
 
   /**
@@ -224,6 +231,63 @@ class ArticleController {
       Logger.error("ArticleController", "Error getting specialties", error);
       res.status(500).json({
         error: "An error occurred while retrieving specialties",
+        message: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+        path: req.path,
+      });
+    }
+  }
+  
+  /**
+   * Get available article types for filtering
+   * @param req Express request
+   * @param res Express response
+   */
+  public getArticleTypes(req: Request, res: Response): void {
+    try {
+      Logger.debug("ArticleController", "Getting available article types");
+      
+      // Format the article types for the API response
+      const articleTypes = ARTICLE_TYPE_DEFINITIONS.map(type => ({
+        id: type.id,
+        name: type.name,
+        description: type.description,
+        color: type.color,
+        priority: type.priority
+      })).sort((a, b) => a.priority - b.priority);
+      
+      res.json({
+        article_types: articleTypes
+      });
+    } catch (error) {
+      Logger.error("ArticleController", "Error getting article types", error);
+      res.status(500).json({
+        error: "An error occurred while retrieving article types",
+        message: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+        path: req.path,
+      });
+    }
+  }
+  
+  /**
+   * Get specialty filters for content filtering
+   * @param req Express request
+   * @param res Express response
+   */
+  public getSpecialtyFilters(req: Request, res: Response): void {
+    try {
+      Logger.debug("ArticleController", "Getting specialty filters");
+      
+      const specialtyFilters = this.specialty_filter.getSpecialtyOptions();
+      
+      res.json({
+        specialty_filters: specialtyFilters
+      });
+    } catch (error) {
+      Logger.error("ArticleController", "Error getting specialty filters", error);
+      res.status(500).json({
+        error: "An error occurred while retrieving specialty filters",
         message: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
         path: req.path,
