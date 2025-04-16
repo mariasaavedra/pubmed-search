@@ -3,6 +3,8 @@ import path from "path";
 import { SavedSearchResult, ProcessedBlueprint, Article } from "../types";
 import { Logger } from "../utils/logger";
 import { ContentProcessor } from "../utils/content-processor";
+import MeshMapper from "../utils/mesh-mapper";
+import { randomBytes } from "crypto";
 
 class FileStorageService {
   private outputDir: string;
@@ -44,7 +46,8 @@ class FileStorageService {
           authors: article.authors,
           journal: article.journal,
           year: new Date(article.pub_date).getFullYear(),
-          mesh_terms: [], // To be populated if/when MeSH terms are available
+          // Use extracted MeSH terms if available, otherwise generate them
+          mesh_terms: (article as any).mesh_terms || this.generateMeshTerms(article),
           full_text: article.full_text,
           methods: article.methods,
           results: article.results,
@@ -135,6 +138,48 @@ class FileStorageService {
   }
 
   /**
+   * Generate MeSH terms for an article using the MeshMapper utility
+   * @param article The article to generate terms for
+   * @returns Array of MeSH terms
+   */
+  private generateMeshTerms(article: Article): string[] {
+    const terms: string[] = [];
+    
+    // Add terms from the title
+    if (article.title) {
+      const titleTerms = MeshMapper.MapTerm(article.title);
+      terms.push(...titleTerms);
+    }
+    
+    // Add terms from the abstract (if needed)
+    if (article.abstract && terms.length < 3) {
+      // Extract key phrases from abstract (simplified approach)
+      const keyPhrases = article.abstract
+        .split(/[.,;:]/)
+        .map(phrase => phrase.trim())
+        .filter(phrase => phrase.length > 10 && phrase.length < 60)
+        .slice(0, 2); // Take up to 2 phrases
+      
+      // Generate terms from key phrases
+      keyPhrases.forEach(phrase => {
+        const phraseTerms = MeshMapper.MapTerm(phrase);
+        terms.push(...phraseTerms);
+      });
+    }
+    
+    // Deduplicate terms
+    const uniqueTerms = [...new Set(terms)];
+    
+    // Ensure we have at least some terms
+    if (uniqueTerms.length === 0) {
+      // If no terms were mapped, use a generic clinical term
+      return ["Medical Subject Headings"];
+    }
+    
+    return uniqueTerms;
+  }
+  
+  /**
    * Generate a filename for the search results
    * @param blueprint The processed blueprint
    * @returns The generated filename
@@ -158,6 +203,7 @@ class FileStorageService {
       sanitize(blueprint.filters.clinical_queries[0]),
       "narrow",
       timestamp,
+      randomBytes(4).toString("hex"),
     ];
 
     return `${components.join("-")}.json`;

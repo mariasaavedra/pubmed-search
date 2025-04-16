@@ -105,7 +105,7 @@ class ArticleController {
       const saved_filename = await this.file_storage_service.saveSearchResult(
         ranked_articles,
         blueprint,
-        query,
+        query + '-ranked',
         pmids,
         total_count
       );

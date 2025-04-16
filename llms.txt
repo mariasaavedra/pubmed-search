@@ -1,0 +1,35 @@
+# PubMed E-Utilities API
+
+## 
+
+- [Main API Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25497/)
+- [Getting Started Guide](https://www.ncbi.nlm.nih.gov/books/NBK25500/)
+- [Entrez Programming Utilities Help](https://www.ncbi.nlm.nih.gov/books/NBK25501/)
+- [EDirect CLI Tool](https://www.ncbi.nlm.nih.gov/books/NBK179288/)
+
+## APIs
+
+- [EInfo](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.EInfo): Retrieve available databases, fields, and links
+- [ESearch](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.ESearch): Search Entrez databases by term
+- [ESummary](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.ESummary): Get document summaries
+- [EFetch](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.EFetch): Download full data records
+- [EPost](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.EPost): Upload UIDs to History server
+- [ELink](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.ELink): Get linked data (citations, related)
+- [EGQuery](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.EGQuery): Global Entrez search
+- [ESpell](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.ESpell): Get spelling suggestions
+- [ECitMatch](https://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter1.ECitMatch): Match citation strings to PMIDs
+
+## Examples
+
+- [Search for "cancer" in PubMed](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=cancer)
+- [Get summary for PMID 30049270](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=30049270)
+- [Fetch full record for PMID 30049270](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30049270&retmode=xml)
+- [Link related citations for PMID 30049270](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=30049270)
+- [Spell suggestion for "cardiomyopthy"](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/espell.fcgi?db=pubmed&term=cardiomyopthy)
+
+## Optional
+
+- [Database Summary JSON](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/einfo.fcgi?retmode=json)
+- [UML Unified API Reference](https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/entrez/eutils/)
+- [NCBI API Key Instructions](https://www.ncbi.nlm.nih.gov/account/settings/)
+

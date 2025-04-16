@@ -157,24 +157,92 @@ export interface PubmedFetchResponse {
     PubmedArticle: Array<{
       MedlineCitation: {
         PMID: string;
+        MeshHeadingList?: {
+          MeshHeading: Array<{
+            DescriptorName: string | {
+              _: string;
+              UI: string;
+            };
+            QualifierName?: Array<{
+              _: string;
+              UI: string;
+            }> | {
+              _: string;
+              UI: string;
+            };
+          }> | {
+            DescriptorName: string | {
+              _: string;
+              UI: string;
+            };
+            QualifierName?: Array<{
+              _: string;
+              UI: string;
+            }> | {
+              _: string;
+              UI: string;
+            };
+          };
+        };
+        ChemicalList?: {
+          Chemical: Array<{
+            NameOfSubstance: string | {
+              _: string;
+              UI: string;
+            };
+            RegistryNumber: string;
+          }> | {
+            NameOfSubstance: string | {
+              _: string;
+              UI: string;
+            };
+            RegistryNumber: string;
+          };
+        };
         Article: {
           ArticleTitle: string;
-          Abstract: {
+          Abstract?: {
             AbstractText: string | Array<{
               _: string;
-              Label: string;
-              NlmCategory: string;
-            }>;
+              Label?: string;
+              NlmCategory?: string;
+            }> | {
+              _: string;
+              Label?: string;
+              NlmCategory?: string;
+            };
           };
           AuthorList?: {
             Author: Array<{
               LastName?: string;
               ForeName?: string;
               Initials?: string;
+              CollectiveName?: string;
               AffiliationInfo?: Array<{
                 Affiliation: string;
-              }>;
-            }>;
+              }> | {
+                Affiliation: string;
+              };
+            }> | {
+              LastName?: string;
+              ForeName?: string;
+              Initials?: string;
+              CollectiveName?: string;
+              AffiliationInfo?: Array<{
+                Affiliation: string;
+              }> | {
+                Affiliation: string;
+              };
+            };
+          };
+          PublicationTypeList?: {
+            PublicationType: Array<{
+              _: string;
+              UI: string;
+            }> | {
+              _: string;
+              UI: string;
+            };
           };
           Journal: {
             Title: string;
@@ -244,6 +312,7 @@ export interface ParsedArticleData {
   supplementary_material?: string[];
   original_xml?: string;
   sanitized_html?: string;
+  mesh_terms?: string[];
 }
 
 export interface RankedArticleData extends ParsedArticleData {
