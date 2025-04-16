@@ -1,0 +1,16 @@
+{
+  "clinical_category": "diagnosis",
+  "clinical_scope": "narrow",
+  "esearch_query": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?term=...",
+  "article_count": 0,
+  "clinical_specialty": "cardiology",
+  "pmids": [111,222,333],
+  "articles": [{
+    "title": "Heart Failure Management",
+    "abstract": "This article discusses the management of heart failure...",
+    "authors": ["John Doe", "Jane Smith"],
+    "journal": "Journal of Cardiology",
+    "year": 2023,
+    "mesh_terms": ["Heart Failure", "Cardiovascular Diseases"]
+  }]
+}

@@ -1,4 +1,25 @@
 // Type definitions for the PubMed Search API
+import { FILTER_MAP } from '../config/pubmed-config';
+
+// Utility types for configuration
+export type ClinicalCategory = keyof typeof FILTER_MAP;
+export type ClinicalScope = keyof (typeof FILTER_MAP)[ClinicalCategory];
+
+// Search result storage types
+export interface SavedSearchResult {
+  clinical_category: ClinicalCategory;
+  clinical_scope: ClinicalScope;
+  esearch_query: string;
+  article_count: number;
+  clinical_specialty: string;
+  pmids: string[];
+  articles: SavedArticle[];
+}
+
+export interface SavedArticle extends Omit<Article, 'scores' | 'url' | 'pub_date'> {
+  year: number;
+  mesh_terms: string[];
+}
 
 // Request type definitions
 export interface ArticleRequest {
@@ -19,6 +40,7 @@ export interface ArticleResponse {
   meta: {
     total: number;
     processing_time: number;
+    saved_filename: string;
   };
 }
 

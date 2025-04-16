@@ -3,6 +3,7 @@ import BlueprintService from '../services/blueprint-service';
 import QueryService from '../services/query-service';
 import PubmedService from '../services/pubmed-service';
 import RankingService from '../services/ranking-service';
+import FileStorageService from '../services/file-storage-service';
 import { ArticleRequest } from '../types';
 import { Logger } from '../utils/logger';
 
@@ -15,11 +16,14 @@ class ArticleController {
   private pubmed_service: PubmedService;
   private ranking_service: RankingService;
 
+  private file_storage_service: FileStorageService;
+
   constructor() {
     this.blueprint_service = new BlueprintService();
     this.query_service = new QueryService();
     this.pubmed_service = new PubmedService();
     this.ranking_service = new RankingService();
+    this.file_storage_service = new FileStorageService();
   }
 
   /**
@@ -64,11 +68,22 @@ class ArticleController {
       
       if (pmids.length === 0) {
         Logger.info('ArticleController', 'No articles found for query');
+        const duration = Date.now() - start_time;
+        const saved_filename = await this.file_storage_service.saveSearchResult(
+          [],
+          blueprint,
+          query,
+          [],
+          0
+        );
+        Logger.info('ArticleController', `Empty search results saved to ${saved_filename}`);
+        
         res.json({
           articles: [],
           meta: {
             total: 0,
-            processing_time: Date.now() - start_time
+            processing_time: duration,
+            saved_filename
           }
         });
         return;
@@ -86,13 +101,24 @@ class ArticleController {
       
       const duration = Date.now() - start_time;
       
+      // Save search results
+      const saved_filename = await this.file_storage_service.saveSearchResult(
+        ranked_articles,
+        blueprint,
+        query,
+        pmids,
+        total_count
+      );
+      Logger.info('ArticleController', `Search results saved to ${saved_filename}`);
+
       // Return results
       Logger.success('ArticleController', `Request completed in ${duration}ms, returning ${ranked_articles.length} articles`);
       res.json({
         articles: ranked_articles,
         meta: {
           total: total_count,
-          processing_time: duration
+          processing_time: duration,
+          saved_filename
         }
       });
     } catch (error) {
