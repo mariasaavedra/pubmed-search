@@ -32,13 +32,6 @@ class FileReader {
     static getSpecialties() {
         return this.readJsonFile('data/specialties.json');
     }
-    /**
-     * Get journal metrics data from the journal-metrics.json file
-     * @returns Journal metrics data
-     */
-    static getJournalMetrics() {
-        return this.readJsonFile('data/journal-metrics.json');
-    }
 }
 exports.default = FileReader;
 //# sourceMappingURL=file-reader.js.map

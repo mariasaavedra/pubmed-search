@@ -107,9 +107,24 @@ class PubmedService {
                         }
                     }
                 }
-                // Extract abstract
-                const abstractNode = articleNode.getElementsByTagName('AbstractText').item(0);
-                const abstract = abstractNode?.textContent || '';
+                // Extract all abstract sections
+                const abstractNodes = articleNode.getElementsByTagName('AbstractText');
+                let abstractParts = [];
+                // Collect all abstract sections
+                for (let j = 0; j < abstractNodes.length; j++) {
+                    const node = abstractNodes.item(j);
+                    if (node) {
+                        const label = node.getAttribute('Label') || node.getAttribute('NlmCategory');
+                        const sectionText = node.textContent || '';
+                        if (label) {
+                            abstractParts.push(`${label}: ${sectionText}`);
+                        }
+                        else {
+                            abstractParts.push(sectionText);
+                        }
+                    }
+                }
+                const abstract = abstractParts.join(' ');
                 // Build article URL
                 const url = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
                 // Create article object

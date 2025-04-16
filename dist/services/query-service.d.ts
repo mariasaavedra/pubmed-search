@@ -1,7 +1,7 @@
 import { ProcessedBlueprint } from "../types";
 /**
  * Service for constructing optimized PubMed search queries
- * Simplified to create direct search term + clinical filter queries
+ * Simplified to create more reliable and effective queries
  */
 declare class QueryService {
     /**
@@ -11,17 +11,12 @@ declare class QueryService {
      */
     buildSearchQuery(blueprint: ProcessedBlueprint): string;
     /**
-     * Create a search term by properly formatting specialty and topics for PubMed
+     * Create a basic search term by handling specialty and topics simply
+     * Leverages PubMed's Automatic Term Mapping for better recall
      * @param blueprint Processed blueprint
      * @returns Formatted search term string
      */
-    private createSearchTerm;
-    /**
-     * Get a combined filter from all clinical queries
-     * @param clinicalQueries Array of clinical query types
-     * @returns Combined clinical query filter string
-     */
-    private getCombinedClinicalQueryFilter;
+    private createBasicSearchTerm;
     /**
      * Validate a constructed query
      * @param query The query to validate

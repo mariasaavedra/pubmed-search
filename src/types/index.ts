@@ -69,7 +69,7 @@ export interface Article {
     relevance: number;
     journal_impact: number;
   };
-  full_text?: string;
+  full_text?: string;  // Full text content fetched from DOI or PubMed
   methods?: string;
   results?: string;
   discussion?: string;

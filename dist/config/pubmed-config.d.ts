@@ -19,17 +19,26 @@ export declare const PUBMED_CONFIG: {
     };
 };
 /**
- * Core Clinical Journals filter (AIM = Abridged Index Medicus)
+ * Clinically Useful Journals (CUJ) filter - Updated 2023
  *
- * This filter restricts search results to approximately 120 core clinical journals
- * curated by the National Library of Medicine for their clinical relevance and quality.
+ * This filter restricts search results to 241 journals identified as having high clinical utility
+ * based on a data-driven approach documented in the Journal of the Medical Library Association.
  *
- * This filter is always applied to all search queries to ensure high-quality, clinically
- * relevant results.
+ * Reference: Klein-Fedyshin M, Ketchum AM. PubMed's core clinical journals filter: redesigned
+ * for contemporary clinical impact and utility. J Med Libr Assoc. 2023;111(3):665-676.
  *
- * Learn more: https://www.nlm.nih.gov/bsd/aim.html
+ * The full list of journals is available in data/clinically-useful-journals.json
  */
-export declare const CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]";
+export declare const CORE_CLINICAL_JOURNALS_FILTER: string;
+/**
+ * Cardiology Journals filter
+ *
+ * This filter restricts search results to high-impact cardiology-specific journals
+ * to improve the relevance of cardiovascular medicine searches.
+ *
+ * The full list of journals is available in data/cardiology-journals.json
+ */
+export declare const CARDIOLOGY_JOURNALS_FILTER: string;
 export declare const AGE_MAP: {
     readonly "Newborn: Birth-1 month": "infant, newborn[mh]";
     readonly "Infant: Birth-23 months": "infant[mh]";
@@ -67,5 +76,6 @@ export declare const FILTER_MAP: {
     };
 };
 export declare const DEFAULT_FILTER: {
-    readonly narrow: "(\n  Clinical Trial[pt] OR Controlled Clinical Trial[pt] OR Meta-Analysis[pt]\n  OR Multicenter Study[pt] OR Observational Study[pt] OR Practice Guideline[pt]\n  OR Randomized Controlled Trial[pt] OR Review[pt] OR Systematic Review[pt]\n)\nAND English[Language]";
+    readonly narrow: "(\n  Clinical Trial[pt] OR Controlled Clinical Trial[pt] OR Meta-Analysis[pt]\n  OR Multicenter Study[pt] OR Observational Study[pt] OR Practice Guideline[pt]\n  OR Randomized Controlled Trial[pt] OR Review[pt] OR Systematic Review[pt]\n) AND English[Language] AND humans[mh] AND free full text[Filter] ";
+    readonly broad: "((clinical[Title/Abstract] AND trial[Title/Abstract]) OR clinical trials as topic[MeSH Terms] OR clinical trial[Publication Type] OR random*[Title/Abstract] OR random allocation[MeSH Terms] OR therapeutic use[MeSH Subheading]) AND English[Language]";
 };

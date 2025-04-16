@@ -1,4 +1,3 @@
-import { JournalMetrics } from '../types';
 /**
  * Utility class for reading JSON data files
  */
@@ -18,10 +17,5 @@ declare class FileReader {
         mesh_terms: string[];
         default_filters: string[];
     }>;
-    /**
-     * Get journal metrics data from the journal-metrics.json file
-     * @returns Journal metrics data
-     */
-    static getJournalMetrics(): Record<string, JournalMetrics>;
 }
 export default FileReader;

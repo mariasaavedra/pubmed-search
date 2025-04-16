@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_FILTER = exports.FILTER_MAP = exports.AGE_MAP = exports.CORE_CLINICAL_JOURNALS_FILTER = exports.PUBMED_CONFIG = void 0;
+exports.DEFAULT_FILTER = exports.FILTER_MAP = exports.AGE_MAP = exports.CARDIOLOGY_JOURNALS_FILTER = exports.CORE_CLINICAL_JOURNALS_FILTER = exports.PUBMED_CONFIG = void 0;
+const journals_1 = require("../data/journals");
 exports.PUBMED_CONFIG = {
     // PubMed API
     // https://www.ncbi.nlm.nih.gov/books/NBK25501/
@@ -24,17 +25,26 @@ exports.PUBMED_CONFIG = {
     },
 };
 /**
- * Core Clinical Journals filter (AIM = Abridged Index Medicus)
+ * Clinically Useful Journals (CUJ) filter - Updated 2023
  *
- * This filter restricts search results to approximately 120 core clinical journals
- * curated by the National Library of Medicine for their clinical relevance and quality.
+ * This filter restricts search results to 241 journals identified as having high clinical utility
+ * based on a data-driven approach documented in the Journal of the Medical Library Association.
  *
- * This filter is always applied to all search queries to ensure high-quality, clinically
- * relevant results.
+ * Reference: Klein-Fedyshin M, Ketchum AM. PubMed's core clinical journals filter: redesigned
+ * for contemporary clinical impact and utility. J Med Libr Assoc. 2023;111(3):665-676.
  *
- * Learn more: https://www.nlm.nih.gov/bsd/aim.html
+ * The full list of journals is available in data/clinically-useful-journals.json
  */
-exports.CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]";
+exports.CORE_CLINICAL_JOURNALS_FILTER = (0, journals_1.createJournalFilter)(journals_1.CLINICALLY_USEFUL_JOURNALS);
+/**
+ * Cardiology Journals filter
+ *
+ * This filter restricts search results to high-impact cardiology-specific journals
+ * to improve the relevance of cardiovascular medicine searches.
+ *
+ * The full list of journals is available in data/cardiology-journals.json
+ */
+exports.CARDIOLOGY_JOURNALS_FILTER = (0, journals_1.createJournalFilter)(journals_1.CARDIOLOGY_JOURNALS);
 exports.AGE_MAP = {
     "Newborn: Birth-1 month": "infant, newborn[mh]",
     "Infant: Birth-23 months": "infant[mh]",
@@ -76,7 +86,7 @@ exports.DEFAULT_FILTER = {
   Clinical Trial[pt] OR Controlled Clinical Trial[pt] OR Meta-Analysis[pt]
   OR Multicenter Study[pt] OR Observational Study[pt] OR Practice Guideline[pt]
   OR Randomized Controlled Trial[pt] OR Review[pt] OR Systematic Review[pt]
-)
-AND English[Language]`,
+) AND English[Language] AND humans[mh] AND free full text[Filter] `,
+    broad: `((clinical[Title/Abstract] AND trial[Title/Abstract]) OR clinical trials as topic[MeSH Terms] OR clinical trial[Publication Type] OR random*[Title/Abstract] OR random allocation[MeSH Terms] OR therapeutic use[MeSH Subheading]) AND English[Language]`,
 };
 //# sourceMappingURL=pubmed-config.js.map
