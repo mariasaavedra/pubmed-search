@@ -9,14 +9,14 @@ class MeshMapper {
      * @param term The term to map
      * @returns Array of MeSH terms
      */
-    static MapTerm(term) {
+    static mapTerm(term) {
         // Check if we already have a cached mapping
         if (this.term_mapping_cache[term.toLowerCase()]) {
             return this.term_mapping_cache[term.toLowerCase()];
         }
         // In a production environment, this would call the PubMed API
         // to get the proper MeSH term mappings. For now, we'll use a simplified approach.
-        const mapped_terms = this.SimpleMeshMapping(term);
+        const mapped_terms = this.simpleMeshMapping(term);
         // Cache the result
         this.term_mapping_cache[term.toLowerCase()] = mapped_terms;
         return mapped_terms;
@@ -26,7 +26,7 @@ class MeshMapper {
      * @param term The term to map
      * @returns Array of mapped MeSH terms
      */
-    static SimpleMeshMapping(term) {
+    static simpleMeshMapping(term) {
         // This is a simplified mapping - in production, this would use PubMed's
         // term mapping API or a more comprehensive database
         const normalized_term = term.toLowerCase();
@@ -66,10 +66,10 @@ class MeshMapper {
      * @param term The term to validate
      * @returns True if the term is a valid MeSH term
      */
-    static ValidateMeshTerm(term) {
+    static validateMeshTerm(term) {
         // This is a simplified validation - in production, this would
         // validate against the actual MeSH database
-        const mapped_terms = this.MapTerm(term);
+        const mapped_terms = this.mapTerm(term);
         return mapped_terms.length > 0 && mapped_terms[0] !== `"${term}"[All Fields]`;
     }
     /**
@@ -77,7 +77,7 @@ class MeshMapper {
      * @param alternatives Array of alternative terms
      * @returns The preferred MeSH term
      */
-    static GetPreferredTerm(alternatives) {
+    static getPreferredTerm(alternatives) {
         if (alternatives.length === 0) {
             return "";
         }

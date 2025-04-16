@@ -32,7 +32,7 @@ export interface SavedSearchResult {
 // Request type definitions
 export interface ArticleRequest {
   specialty: string;
-  topics: string[];
+  topics?: string[];
   filters?: {
     clinical_queries?: string[];
     age_group?: string;

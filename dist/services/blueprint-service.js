@@ -10,7 +10,7 @@ const logger_1 = require("../utils/logger");
  */
 class BlueprintService {
     constructor() {
-        this.specialties = file_reader_1.default.GetSpecialties();
+        this.specialties = file_reader_1.default.getSpecialties();
         logger_1.Logger.debug('BlueprintService', `Initialized with ${Object.keys(this.specialties).length} specialties`);
     }
     /**
@@ -18,15 +18,15 @@ class BlueprintService {
      * @param request The blueprint request
      * @returns Processed blueprint
      */
-    ProcessBlueprint(request) {
+    processBlueprint(request) {
         logger_1.Logger.debug('BlueprintService', `Processing blueprint request`, request);
         // Normalize and validate inputs
-        const normalized_specialty = this.NormalizeSpecialty(request.specialty);
+        const normalized_specialty = this.normalizeSpecialty(request.specialty);
         logger_1.Logger.debug('BlueprintService', `Normalized specialty: ${request.specialty} -> ${normalized_specialty}`);
-        const normalized_topics = this.NormalizeTopics(request.topics);
-        logger_1.Logger.debug('BlueprintService', `Normalized ${request.topics.length} topics -> ${normalized_topics.length} unique topics`);
+        const normalized_topics = this.normalizeTopics(request.topics || []);
+        logger_1.Logger.debug('BlueprintService', `Normalized ${request?.topics?.length || 0} topics -> ${normalized_topics.length} unique topics`);
         // Verify specialty exists
-        if (!this.ValidateSpecialty(normalized_specialty)) {
+        if (!this.validateSpecialty(normalized_specialty)) {
             logger_1.Logger.error('BlueprintService', `Invalid specialty: ${normalized_specialty}`);
             throw new Error(`Invalid specialty: ${normalized_specialty}`);
         }
@@ -50,7 +50,7 @@ class BlueprintService {
      * @param specialty Specialty name
      * @returns Normalized specialty name
      */
-    NormalizeSpecialty(specialty) {
+    normalizeSpecialty(specialty) {
         const normalized = specialty.toLowerCase().trim();
         // Handle common aliases
         const aliases = {
@@ -71,7 +71,7 @@ class BlueprintService {
      * @param specialty Specialty to validate
      * @returns True if the specialty is valid
      */
-    ValidateSpecialty(specialty) {
+    validateSpecialty(specialty) {
         return !!this.specialties[specialty];
     }
     /**
@@ -79,9 +79,9 @@ class BlueprintService {
      * @param specialty The specialty
      * @returns Array of common topics for the specialty
      */
-    GetSuggestedTopics(specialty) {
-        const normalized_specialty = this.NormalizeSpecialty(specialty);
-        if (!this.ValidateSpecialty(normalized_specialty)) {
+    getSuggestedTopics(specialty) {
+        const normalized_specialty = this.normalizeSpecialty(specialty);
+        if (!this.validateSpecialty(normalized_specialty)) {
             return [];
         }
         return this.specialties[normalized_specialty].common_topics;
@@ -91,7 +91,7 @@ class BlueprintService {
      * @param topics Array of topics
      * @returns Normalized topics
      */
-    NormalizeTopics(topics) {
+    normalizeTopics(topics) {
         // Process each topic and remove duplicates
         const normalized = topics
             .map(topic => topic.toLowerCase().trim())
@@ -104,9 +104,9 @@ class BlueprintService {
      * @param specialty The specialty
      * @returns Array of MeSH terms for the specialty
      */
-    GetSpecialtyMeshTerms(specialty) {
-        const normalized_specialty = this.NormalizeSpecialty(specialty);
-        if (!this.ValidateSpecialty(normalized_specialty)) {
+    getSpecialtyMeshTerms(specialty) {
+        const normalized_specialty = this.normalizeSpecialty(specialty);
+        if (!this.validateSpecialty(normalized_specialty)) {
             return [];
         }
         return this.specialties[normalized_specialty].mesh_terms;
@@ -115,7 +115,7 @@ class BlueprintService {
      * Get all specialties
      * @returns All specialties data
      */
-    GetSpecialties() {
+    getSpecialties() {
         return this.specialties;
     }
 }

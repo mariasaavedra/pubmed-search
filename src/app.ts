@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import articleRoutes from "./routes/article-routes";
+import ArticleController from "./controllers/article-controller";
 import { PUBMED_CONFIG } from "./config/pubmed-config";
 import { Logger } from "./utils/logger";
 import { requestLogger } from "./middlewares/request-logger";
@@ -14,16 +15,32 @@ const app = express();
 const port = process.env.PORT || 3000;
 const host = '0.0.0.0'
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Basic middleware
 app.use(cors());
 
-// Request logging middleware
+// Body parsing middleware - MUST BE BEFORE ROUTES
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Logging middleware
 app.use(requestLogger);
 
-// Routes
-app.use("/api", articleRoutes);
+// Debug middleware to inspect requests
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Received ${req.method} ${req.url}`);
+  console.log('[DEBUG] Request Body:', req.body);
+  next();
+});
+
+// Create a POST route handler directly on app
+app.post('/api/articles/specialty', (req, res) => {
+  console.log('Received specialty request:', req.body);
+  const controller = new ArticleController();
+  return controller.getArticlesBySpecialty(req, res);
+});
+
+// Mount other routes
+app.use(articleRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -44,6 +61,7 @@ app.get("/", (req, res) => {
       articles: "POST /api/articles",
       specialties: "GET /api/specialties",
       topics: "GET /api/specialties/{specialty}/topics",
+      "articles/specialty": "POST /api/articles/specialty",
     },
     config: {
       rate_limit: {

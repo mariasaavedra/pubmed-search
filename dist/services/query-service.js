@@ -14,11 +14,11 @@ class QueryService {
      * @param blueprint The processed blueprint
      * @returns PubMed search query string
      */
-    BuildSearchQuery(blueprint) {
+    buildSearchQuery(blueprint) {
         // Create the core topic query
-        const topic_query = this.BuildTopicQuery(blueprint.topics);
+        const topic_query = this.buildTopicQuery(blueprint.topics);
         // Add filters
-        const filter_query = this.ApplyFilters(blueprint.filters);
+        const filter_query = this.applyFilters(blueprint.filters);
         // Combine all query parts
         return `(${topic_query}) AND (${filter_query})`;
     }
@@ -27,13 +27,13 @@ class QueryService {
      * @param topics Array of topics
      * @returns Topic query string
      */
-    BuildTopicQuery(topics) {
+    buildTopicQuery(topics) {
         if (topics.length === 0) {
             throw new Error('At least one topic is required');
         }
         // Map each topic to MeSH terms and format for search
         const topic_queries = topics.map(topic => {
-            const mesh_terms = mesh_mapper_1.default.MapTerm(topic);
+            const mesh_terms = mesh_mapper_1.default.mapTerm(topic);
             if (mesh_terms.length === 0) {
                 // If no MeSH terms, use the original topic with various fields
                 return `("${topic}"[Title/Abstract] OR "${topic}"[All Fields])`;
@@ -52,7 +52,7 @@ class QueryService {
      * @param filters Query filters
      * @returns Filter query string
      */
-    ApplyFilters(filters) {
+    applyFilters(filters) {
         const filter_parts = [];
         // Apply study type filters
         if (filters.clinical_queries && filters.clinical_queries.length > 0) {
@@ -84,7 +84,7 @@ class QueryService {
      * @param query The query to validate
      * @returns True if the query is valid
      */
-    ValidateQuery(query) {
+    validateQuery(query) {
         // Check minimum query length
         if (query.length < 10) {
             console.log('Query validation failed: Too short');
@@ -146,7 +146,7 @@ class QueryService {
      * @param limit Results per page
      * @returns Query with pagination parameters
      */
-    AddPagination(query, page = 1, limit = 10) {
+    addPagination(query, page = 1, limit = 10) {
         const retmax = Math.min(Math.max(1, limit), 100); // Limit between 1-100
         const retstart = (Math.max(1, page) - 1) * retmax;
         return `${query}&retmax=${retmax}&retstart=${retstart}`;

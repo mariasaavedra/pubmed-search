@@ -8,25 +8,25 @@ declare class QueryService {
      * @param blueprint The processed blueprint
      * @returns PubMed search query string
      */
-    BuildSearchQuery(blueprint: ProcessedBlueprint): string;
+    buildSearchQuery(blueprint: ProcessedBlueprint): string;
     /**
      * Build a query string for the topics
      * @param topics Array of topics
      * @returns Topic query string
      */
-    BuildTopicQuery(topics: string[]): string;
+    buildTopicQuery(topics: string[]): string;
     /**
      * Apply filters to the query
      * @param filters Query filters
      * @returns Filter query string
      */
-    ApplyFilters(filters: QueryFilters): string;
+    applyFilters(filters: QueryFilters): string;
     /**
      * Validate a constructed query
      * @param query The query to validate
      * @returns True if the query is valid
      */
-    ValidateQuery(query: string): boolean;
+    validateQuery(query: string): boolean;
     /**
      * Add pagination parameters to a query
      * @param query Base query
@@ -34,6 +34,6 @@ declare class QueryService {
      * @param limit Results per page
      * @returns Query with pagination parameters
      */
-    AddPagination(query: string, page?: number, limit?: number): string;
+    addPagination(query: string, page?: number, limit?: number): string;
 }
 export default QueryService;

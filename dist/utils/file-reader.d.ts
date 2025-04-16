@@ -8,12 +8,12 @@ declare class FileReader {
      * @param filePath Path to the JSON file
      * @returns Parsed JSON data
      */
-    static ReadJsonFile<T>(filePath: string): T;
+    static readJsonFile<T>(filePath: string): T;
     /**
      * Get specialty data from the specialties.json file
      * @returns Specialty data
      */
-    static GetSpecialties(): Record<string, {
+    static getSpecialties(): Record<string, {
         common_topics: string[];
         mesh_terms: string[];
         default_filters: string[];
@@ -22,6 +22,6 @@ declare class FileReader {
      * Get journal metrics data from the journal-metrics.json file
      * @returns Journal metrics data
      */
-    static GetJournalMetrics(): Record<string, JournalMetrics>;
+    static getJournalMetrics(): Record<string, JournalMetrics>;
 }
 export default FileReader;

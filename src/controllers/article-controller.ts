@@ -17,22 +17,45 @@ class ArticleController {
    * @param req Express request
    * @param res Express response
    */
-  public async getArticles(req: Request, res: Response): Promise<void> {
+  public async getArticles(req: Request, res: Response): Promise<void | Response> {
     try {
-      Logger.debug(
-        "ArticleController",
-        "Received article request",
-        req.body
-      );
+      Logger.debug("ArticleController", "Received article request", req.body);
 
-      const result = await this.article_service.getArticles(req.body);
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "Request body must be a valid JSON object",
+          timestamp: new Date().toISOString(),
+          path: req.path
+        });
+      }
+
+      // Handle pagination
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const requestData = {
+        ...req.body,
+        page,
+        limit
+      };
+
+      const result = await this.article_service.getArticles(requestData);
       res.json(result);
     } catch (error) {
       Logger.error("ArticleController", "Error retrieving articles", error);
-      res.status(error instanceof Error && error.message === "Invalid query construction" ? 400 : 500)
+      res
+        .status(
+          error instanceof Error &&
+            error.message === "Invalid query construction"
+            ? 400
+            : 500
+        )
         .json({
           error: "An error occurred while processing your request",
           message: error instanceof Error ? error.message : "Unknown error",
+          timestamp: new Date().toISOString(),
+          path: req.path
         });
     }
   }
@@ -58,20 +81,106 @@ class ArticleController {
         "Error getting suggested topics",
         error
       );
-      res.status(error instanceof Error && error.message === "Specialty parameter is required" ? 400 : 500)
+      res
+        .status(
+          error instanceof Error &&
+            error.message === "Specialty parameter is required"
+            ? 400
+            : 500
+        )
         .json({
           error: "An error occurred while retrieving suggested topics",
           message: error instanceof Error ? error.message : "Unknown error",
+          timestamp: new Date().toISOString(),
+          path: req.path
         });
     }
   }
 
   /**
-   * Get all available specialties
-   * @param _req Express request
+   * Handle article retrieval based on specialty only
+   * @param req Express request
    * @param res Express response
    */
-  public getSpecialties(_req: Request, res: Response): void {
+  public async getArticlesBySpecialty(
+    req: Request,
+    res: Response
+  ): Promise<void | Response> {
+    try {
+      Logger.debug(
+        "ArticleController",
+        "Received specialty-only article request",
+        req.body
+      );
+
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "Request body must be a valid JSON object",
+          timestamp: new Date().toISOString(),
+          path: req.path
+        });
+      }
+
+      if (!req.body.specialty || typeof req.body.specialty !== 'string') {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "specialty must be a non-empty string",
+          timestamp: new Date().toISOString(),
+          path: req.path
+        });
+      }
+
+      // Handle pagination
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      // Get suggested topics for the specialty but limit them to avoid URL too long errors
+      const { topics: allTopics } = this.article_service.getSuggestedTopics(
+        req.body.specialty
+      );
+      
+      // Only use the first 5 topics to keep the query manageable
+      const topics = allTopics.slice(0, 5);
+      
+      // Log the selected topics
+      console.log('Using topics:', topics);
+
+      const result = await this.article_service.getArticles({
+        specialty: req.body.specialty,
+        topics,
+        filters: {
+          clinical_queries: ["Therapy", "Diagnosis"],
+          year_range: 2,
+        },
+        page,
+        limit,
+      });
+      res.json(result);
+    } catch (error) {
+      Logger.error(
+        "ArticleController",
+        "Error retrieving articles by specialty",
+        error
+      );
+      res
+        .status(
+          error instanceof Error &&
+            error.message === "Invalid query construction"
+            ? 400
+            : 500
+        )
+        .json({
+          error: "An error occurred while processing your request",
+          message: error instanceof Error ? error.message : "Unknown error",
+          timestamp: new Date().toISOString(),
+          path: req.path
+        });
+    }
+  }
+
+  public getSpecialties(req: Request, res: Response): void {
     try {
       Logger.debug("ArticleController", "Getting all available specialties");
       const result = this.article_service.getSpecialties();
@@ -81,6 +190,8 @@ class ArticleController {
       res.status(500).json({
         error: "An error occurred while retrieving specialties",
         message: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+        path: req.path
       });
     }
   }

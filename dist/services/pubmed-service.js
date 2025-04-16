@@ -3,34 +3,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
-const xml2js_1 = require("xml2js");
 const dotenv_1 = __importDefault(require("dotenv"));
 const pubmed_config_1 = require("../config/pubmed-config");
-const rate_limiter_1 = __importDefault(require("../utils/rate-limiter"));
-const article_content_service_1 = __importDefault(require("./article-content-service"));
 const logger_1 = require("../utils/logger");
+const e_utilities_service_1 = __importDefault(require("./e-utilities.service"));
 // Load environment variables
 dotenv_1.default.config();
 /**
  * Service for interacting with the PubMed API
+ * Uses the strongly-typed E-utilities service for API calls
  */
 class PubmedService {
     constructor() {
-        this.base_url = pubmed_config_1.PUBMED_CONFIG.base_url;
-        this.api_key = process.env.PUBMED_API_KEY;
-        // Initialize rate limiter based on config
-        this.rate_limiter = new rate_limiter_1.default(pubmed_config_1.PUBMED_CONFIG.rate_limit.max_concurrent, pubmed_config_1.PUBMED_CONFIG.rate_limit.min_time);
-        // Initialize content service
-        this.content_service = new article_content_service_1.default();
-        logger_1.Logger.debug("PubmedService", "Initialized with configuration", {
-            base_url: this.base_url,
-            api_key_present: !!this.api_key,
-            rate_limit: {
-                max_concurrent: pubmed_config_1.PUBMED_CONFIG.rate_limit.max_concurrent,
-                min_time: pubmed_config_1.PUBMED_CONFIG.rate_limit.min_time,
-            },
-        });
+        // Using a default contact email, can be overridden in .env
+        this.contactEmail = process.env.CONTACT_EMAIL || 'pubmed-search@example.com';
+        this.eutils = new e_utilities_service_1.default(this.contactEmail);
+        logger_1.Logger.debug("PubmedService", "Initialized E-utilities service");
     }
     /**
      * Search for articles using a PubMed query
@@ -39,49 +27,25 @@ class PubmedService {
      * @param limit Results per page
      * @returns Search results with PMIDs
      */
-    async SearchArticles(query, page = 1, limit = pubmed_config_1.PUBMED_CONFIG.page_size) {
+    async searchArticles(query, page = 1, limit = pubmed_config_1.PUBMED_CONFIG.page_size) {
         logger_1.Logger.debug("PubmedService", `Searching articles with query, page=${page}, limit=${limit}`);
-        // Wait for rate limiting slot
-        await this.rate_limiter.WaitForSlot();
-        logger_1.Logger.debug("PubmedService", "Rate limit slot acquired");
         try {
-            // Construct search URL
-            const search_url = `${this.base_url}${pubmed_config_1.PUBMED_CONFIG.esearch}`;
+            // Calculate pagination parameters
             const retmax = Math.min(Math.max(1, limit), 100); // Between 1-100
             const retstart = (Math.max(1, page) - 1) * retmax;
-            logger_1.Logger.debug("PubmedService", `Making API request to ${search_url}`, {
-                parameters: {
-                    db: "pubmed",
-                    term: query,
-                    retmode: "json",
-                    retmax,
-                    retstart,
-                    api_key_present: !!this.api_key,
-                },
+            // Use ESearch to find articles
+            const searchResults = await this.eutils.esearch({
+                term: query,
+                retmode: "json",
+                retmax,
+                retstart
             });
-            // Make the API request
-            const start_time = Date.now();
-            const response = await axios_1.default.get(search_url, {
-                params: {
-                    db: "pubmed",
-                    term: query,
-                    retmode: "json",
-                    retmax: retmax,
-                    retstart: retstart,
-                    api_key: this.api_key,
-                },
-            });
-            const duration = Date.now() - start_time;
-            logger_1.Logger.debug("PubmedService", `API request completed in ${duration}ms`);
-            // Parse the response
-            const search_results = response.data;
             // Check if we have valid results
-            if (!search_results.esearchresult ||
-                !search_results.esearchresult.idlist) {
+            if (!searchResults.esearchresult || !searchResults.esearchresult.idlist) {
                 logger_1.Logger.warn("PubmedService", "No results found in search response");
                 return [];
             }
-            const ids = search_results.esearchresult.idlist;
+            const ids = searchResults.esearchresult.idlist;
             logger_1.Logger.debug("PubmedService", `Found ${ids.length} article IDs`);
             return ids;
         }
@@ -91,48 +55,104 @@ class PubmedService {
         }
     }
     /**
+     * Extract article metadata from a PubMed XML document
+     * @param xmlDoc The XML Document containing article data
+     * @returns Extracted Article object
+     */
+    extractArticleFromXML(xmlDoc) {
+        try {
+            const articles = [];
+            const articleNodes = xmlDoc.getElementsByTagName('PubmedArticle');
+            logger_1.Logger.debug("PubmedService", `Extracting data from ${articleNodes.length} article nodes`);
+            for (let i = 0; i < articleNodes.length; i++) {
+                const articleNode = articleNodes.item(i);
+                if (!articleNode)
+                    continue;
+                // Extract PMID
+                const pmidNode = articleNode.getElementsByTagName('PMID').item(0);
+                const pmid = pmidNode?.textContent || '';
+                // Extract article title
+                const titleNode = articleNode.getElementsByTagName('ArticleTitle').item(0);
+                const title = titleNode?.textContent || '';
+                // Extract journal info
+                const journalNode = articleNode.getElementsByTagName('Journal').item(0);
+                const journalTitleNode = journalNode?.getElementsByTagName('Title').item(0);
+                const journal = journalTitleNode?.textContent || '';
+                // Extract publication date
+                const pubDateNode = articleNode.getElementsByTagName('PubDate').item(0);
+                let pubDate = '';
+                if (pubDateNode) {
+                    const year = pubDateNode.getElementsByTagName('Year').item(0)?.textContent || '';
+                    const month = pubDateNode.getElementsByTagName('Month').item(0)?.textContent || '';
+                    const day = pubDateNode.getElementsByTagName('Day').item(0)?.textContent || '';
+                    pubDate = [year, month, day].filter(Boolean).join('-');
+                }
+                // Extract authors
+                const authorNames = [];
+                const authorListNode = articleNode.getElementsByTagName('AuthorList').item(0);
+                if (authorListNode) {
+                    const authorNodes = authorListNode.getElementsByTagName('Author');
+                    for (let j = 0; j < authorNodes.length; j++) {
+                        const authorNode = authorNodes.item(j);
+                        if (!authorNode)
+                            continue;
+                        const lastName = authorNode.getElementsByTagName('LastName').item(0)?.textContent || '';
+                        const foreName = authorNode.getElementsByTagName('ForeName').item(0)?.textContent || '';
+                        const initials = authorNode.getElementsByTagName('Initials').item(0)?.textContent || '';
+                        if (lastName && (foreName || initials)) {
+                            authorNames.push(`${lastName} ${foreName || initials}`);
+                        }
+                        else if (lastName) {
+                            authorNames.push(lastName);
+                        }
+                    }
+                }
+                // Extract abstract
+                const abstractNode = articleNode.getElementsByTagName('AbstractText').item(0);
+                const abstract = abstractNode?.textContent || '';
+                // Build article URL
+                const url = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+                // Create article object
+                articles.push({
+                    pmid,
+                    title,
+                    authors: authorNames,
+                    journal,
+                    pub_date: pubDate,
+                    abstract,
+                    url,
+                    scores: {
+                        relevance: 0, // To be calculated later
+                        journal_impact: 0, // To be calculated later
+                    }
+                });
+            }
+            return articles;
+        }
+        catch (error) {
+            logger_1.Logger.error("PubmedService", "Error extracting article data from XML", error);
+            throw new Error("Failed to extract article data from PubMed XML");
+        }
+    }
+    /**
      * Fetch article details by PMID
      * @param pmids Array of PubMed IDs
      * @returns Array of article details
      */
-    async FetchArticleDetails(pmids) {
+    async fetchArticleDetails(pmids) {
         if (pmids.length === 0) {
             logger_1.Logger.debug("PubmedService", "No PMIDs provided, returning empty array");
             return [];
         }
         logger_1.Logger.debug("PubmedService", `Fetching details for ${pmids.length} articles`);
-        // Wait for rate limiting slot
-        await this.rate_limiter.WaitForSlot();
-        logger_1.Logger.debug("PubmedService", "Rate limit slot acquired for fetch details");
         try {
-            // Construct fetch URL
-            const fetch_url = `${this.base_url}${pubmed_config_1.PUBMED_CONFIG.efetch}`;
-            logger_1.Logger.debug("PubmedService", `Making API request to ${fetch_url}`, {
-                parameters: {
-                    db: "pubmed",
-                    id_count: pmids.length,
-                    retmode: "xml",
-                    api_key_present: !!this.api_key,
-                },
+            // Use EFetch to get articles in XML format
+            const xmlDoc = await this.eutils.efetchXML({
+                id: pmids.join(","),
+                retmode: "xml"
             });
-            // Make the API request
-            const start_time = Date.now();
-            const response = await axios_1.default.get(fetch_url, {
-                params: {
-                    db: "pubmed",
-                    id: pmids.join(","),
-                    retmode: "xml",
-                    api_key: this.api_key,
-                },
-            });
-            const duration = Date.now() - start_time;
-            logger_1.Logger.debug("PubmedService", `API request for article details completed in ${duration}ms`);
-            // Store original XML
-            const original_xml = response.data;
-            // Parse XML response
-            const xml_data = await this.ParseXml(original_xml);
-            // Extract article data
-            const articles = await this.ExtractArticleData(xml_data, original_xml);
+            // Extract article data from XML
+            const articles = this.extractArticleFromXML(xmlDoc);
             logger_1.Logger.debug("PubmedService", `Successfully extracted ${articles.length} article details`);
             return articles;
         }
@@ -142,288 +162,21 @@ class PubmedService {
         }
     }
     /**
-     * Parse XML response from PubMed
-     * @param xml XML string
-     * @returns Parsed XML object
-     */
-    async ParseXml(xml) {
-        logger_1.Logger.debug("PubmedService", "Parsing XML response");
-        const start_time = Date.now();
-        try {
-            // Use enhanced XML parsing options to preserve structure and attributes
-            const result = await (0, xml2js_1.parseStringPromise)(xml, {
-                explicitArray: true, // Ensure all elements are arrays for consistency
-                mergeAttrs: false, // Keep attributes separate
-                explicitRoot: true, // Keep the root element
-                normalizeTags: false, // Don't normalize tag names
-                attrkey: '@', // Prefix attributes with @
-                charkey: '_', // Use _ for element content
-                trim: true // Trim whitespace
-            });
-            const duration = Date.now() - start_time;
-            logger_1.Logger.debug("PubmedService", `XML parsing completed in ${duration}ms`);
-            return result;
-        }
-        catch (error) {
-            logger_1.Logger.error("PubmedService", "Error parsing XML", error);
-            throw new Error("Failed to parse PubMed response");
-        }
-    }
-    /**
-     * Extract article data from PubMed response
-     * @param data PubMed response data
-     * @param original_xml Original XML response for preservation
-     * @returns Array of parsed article data
-     */
-    async ExtractArticleData(data, original_xml) {
-        try {
-            if (!data.PubmedArticleSet || !data.PubmedArticleSet.PubmedArticle || !data.PubmedArticleSet.PubmedArticle.length) {
-                logger_1.Logger.warn("PubmedService", "No articles found in PubMed response");
-                return [];
-            }
-            logger_1.Logger.debug("PubmedService", `${data.PubmedArticleSet.PubmedArticle.length} articles found in XML data`);
-            const articles = data.PubmedArticleSet.PubmedArticle;
-            return Promise.all(articles.map(async (pubmedArticle) => {
-                try {
-                    // Extract basic citation data
-                    const citation = pubmedArticle.MedlineCitation?.[0] || {};
-                    const pmid = this.extractTextFromElement(citation.PMID);
-                    logger_1.Logger.debug("PubmedService", `Processing article with PMID ${pmid}`);
-                    // Extract article data - handle safely with optional chaining
-                    const articleData = citation.Article?.[0] || {};
-                    // Extract title
-                    const title = this.extractTextFromElement(articleData.ArticleTitle);
-                    // Extract journal info
-                    const journalData = articleData.Journal?.[0] || {};
-                    const journal = this.extractTextFromElement(journalData.Title);
-                    // Extract publication date
-                    let pubDate = "";
-                    const journalIssue = journalData.JournalIssue?.[0] || {};
-                    const pubDateData = journalIssue.PubDate?.[0] || {};
-                    const year = this.extractTextFromElement(pubDateData.Year);
-                    const month = this.extractTextFromElement(pubDateData.Month);
-                    const day = this.extractTextFromElement(pubDateData.Day);
-                    const medlineDate = this.extractTextFromElement(pubDateData.MedlineDate);
-                    if (year) {
-                        pubDate = month && day
-                            ? `${year}-${month}-${day}`
-                            : month
-                                ? `${year}-${month}`
-                                : year;
-                    }
-                    else if (medlineDate) {
-                        pubDate = medlineDate;
-                    }
-                    // Extract abstract and section-specific content
-                    const abstractData = articleData.Abstract?.[0] || {};
-                    const abstractTextElements = abstractData.AbstractText || [];
-                    let fullAbstract = "";
-                    let methodsText = "";
-                    let resultsText = "";
-                    let discussionText = "";
-                    let conclusionText = "";
-                    // Process abstract sections
-                    if (abstractTextElements.length > 0) {
-                        // Multiple abstract sections with labels
-                        abstractTextElements.forEach((section) => {
-                            const sectionText = this.extractTextFromElement(section);
-                            if (!sectionText)
-                                return;
-                            // Add to full abstract
-                            fullAbstract += sectionText + " ";
-                            // Check for section labels
-                            const nlmCategory = section['@'] ?
-                                (section['@'].NlmCategory || section['@'].Label || "").toLowerCase() : "";
-                            if (nlmCategory.includes("methods") || nlmCategory.includes("materials")) {
-                                methodsText = sectionText;
-                            }
-                            else if (nlmCategory.includes("results") || nlmCategory.includes("findings")) {
-                                resultsText = sectionText;
-                            }
-                            else if (nlmCategory.includes("discussion") || nlmCategory.includes("interpretation")) {
-                                discussionText = sectionText;
-                            }
-                            else if (nlmCategory.includes("conclusion") || nlmCategory.includes("summary")) {
-                                conclusionText = sectionText;
-                            }
-                        });
-                    }
-                    else if (typeof abstractData.AbstractText === 'string') {
-                        // Simple string abstract
-                        fullAbstract = abstractData.AbstractText;
-                    }
-                    // Extract author list
-                    const authors = [];
-                    const authorListData = articleData.AuthorList?.[0] || {};
-                    const authorElements = authorListData.Author || [];
-                    authorElements.forEach((author) => {
-                        const lastName = this.extractTextFromElement(author.LastName);
-                        const initials = this.extractTextFromElement(author.Initials);
-                        const collectiveName = this.extractTextFromElement(author.CollectiveName);
-                        if (lastName && initials) {
-                            authors.push(`${lastName} ${initials}`);
-                        }
-                        else if (lastName) {
-                            authors.push(lastName);
-                        }
-                        else if (collectiveName) {
-                            authors.push(collectiveName);
-                        }
-                    });
-                    // Extract MeSH terms
-                    const meshTerms = [];
-                    const meshHeadingList = citation.MeshHeadingList?.[0] || {};
-                    const meshHeadings = meshHeadingList.MeshHeading || [];
-                    meshHeadings.forEach((mesh) => {
-                        // Extract descriptor name
-                        const descriptorElement = mesh.DescriptorName?.[0];
-                        if (descriptorElement) {
-                            const term = this.extractTextFromElement(descriptorElement);
-                            if (term) {
-                                meshTerms.push(term);
-                            }
-                        }
-                        // Extract qualifier names
-                        const qualifierElements = mesh.QualifierName || [];
-                        qualifierElements.forEach((qualifier) => {
-                            const term = this.extractTextFromElement(qualifier);
-                            if (term) {
-                                meshTerms.push(term);
-                            }
-                        });
-                    });
-                    logger_1.Logger.debug("PubmedService", `Extracted ${meshTerms.length} MeSH terms for PMID ${pmid}`);
-                    // Initial article data from XML
-                    const baseArticle = {
-                        pmid,
-                        title,
-                        abstract: fullAbstract.trim(),
-                        authors,
-                        journal,
-                        pub_date: pubDate,
-                        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
-                        methods: methodsText,
-                        results: resultsText,
-                        discussion: discussionText,
-                        conclusion: conclusionText,
-                        figures: [],
-                        tables: [],
-                        supplementary_material: [],
-                        original_xml: original_xml,
-                        mesh_terms: meshTerms,
-                    };
-                    try {
-                        // Try to enhance with web scraping content
-                        logger_1.Logger.debug("PubmedService", `Attempting to enhance content for PMID ${pmid} with web scraping`);
-                        const content = await this.content_service.extractContentFromPubMed(pmid, original_xml);
-                        // Merge with preference for scraped content
-                        const details = {
-                            ...baseArticle,
-                            full_text: content.full_text || fullAbstract.trim(),
-                            methods: content.methods || baseArticle.methods,
-                            results: content.results || baseArticle.results,
-                            discussion: content.discussion || baseArticle.discussion,
-                            conclusion: content.conclusion || baseArticle.conclusion,
-                            figures: content.figures,
-                            tables: content.tables,
-                            supplementary_material: content.supplementary_material,
-                            sanitized_html: content.sanitized_html
-                        };
-                        logger_1.Logger.debug("PubmedService", `Successfully enhanced content for PMID ${pmid}`);
-                        return details;
-                    }
-                    catch (error) {
-                        // Web scraping failed - use basic XML data
-                        logger_1.Logger.warn("PubmedService", `Web scraping failed for PMID ${pmid}, using XML extraction only`, error);
-                        return {
-                            ...baseArticle,
-                            full_text: fullAbstract.trim() || "No content available"
-                        };
-                    }
-                }
-                catch (articleError) {
-                    // Handle errors for individual articles
-                    const pmid = pubmedArticle.MedlineCitation?.[0]?.PMID?.[0]?._ || "Unknown";
-                    logger_1.Logger.error("PubmedService", `Error processing article with PMID ${pmid}`, articleError);
-                    // Return minimal article data to prevent complete failure
-                    return {
-                        pmid,
-                        title: pubmedArticle.MedlineCitation?.[0]?.Article?.[0]?.ArticleTitle?.[0]?._ || "Untitled Article",
-                        abstract: "Error processing article content",
-                        authors: [],
-                        journal: "",
-                        pub_date: "",
-                        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
-                        full_text: "Error processing article content",
-                        mesh_terms: [],
-                        figures: [],
-                        tables: [],
-                        supplementary_material: []
-                    };
-                }
-            }));
-        }
-        catch (error) {
-            logger_1.Logger.error("PubmedService", "Critical error extracting article data", error);
-            throw new Error("Failed to extract article data from PubMed response");
-        }
-    }
-    /**
-     * Helper method to safely extract text from XML elements
-     * @param element XML element that might be string, object with _ property, or array of such objects
-     * @returns Extracted text or empty string
-     */
-    extractTextFromElement(element) {
-        if (!element) {
-            return '';
-        }
-        // Handle array
-        if (Array.isArray(element)) {
-            if (element.length === 0)
-                return '';
-            element = element[0];
-        }
-        // Handle object with text content
-        if (typeof element === 'object') {
-            return element._ || '';
-        }
-        // Handle string
-        if (typeof element === 'string') {
-            return element;
-        }
-        return '';
-    }
-    /**
      * Get the count of articles matching a query
      * @param query PubMed search query
      * @returns Count of matching articles
      */
-    async GetArticleCount(query) {
+    async getArticleCount(query) {
         logger_1.Logger.debug("PubmedService", "Getting article count for query");
-        // Wait for rate limiting slot
-        await this.rate_limiter.WaitForSlot();
-        logger_1.Logger.debug("PubmedService", "Rate limit slot acquired for article count");
         try {
-            // Construct search URL
-            const search_url = `${this.base_url}${pubmed_config_1.PUBMED_CONFIG.esearch}`;
-            logger_1.Logger.debug("PubmedService", `Making count request to ${search_url}`);
-            // Make the API request
-            const start_time = Date.now();
-            const response = await axios_1.default.get(search_url, {
-                params: {
-                    db: "pubmed",
-                    term: query,
-                    retmode: "json",
-                    retmax: 0,
-                    api_key: this.api_key,
-                },
+            // Use ESearch to get the count
+            const searchResults = await this.eutils.esearch({
+                term: query,
+                retmode: "json",
+                retmax: 0
             });
-            const duration = Date.now() - start_time;
-            logger_1.Logger.debug("PubmedService", `Count request completed in ${duration}ms`);
-            // Parse the response
-            const search_results = response.data;
-            if (search_results.esearchresult && search_results.esearchresult.count) {
-                const count = parseInt(search_results.esearchresult.count, 10);
+            if (searchResults.esearchresult && searchResults.esearchresult.count) {
+                const count = parseInt(searchResults.esearchresult.count, 10);
                 logger_1.Logger.debug("PubmedService", `Found ${count} total matching articles`);
                 return count;
             }
@@ -433,6 +186,57 @@ class PubmedService {
         catch (error) {
             logger_1.Logger.error("PubmedService", "Error getting article count", error);
             throw new Error("Failed to get article count from PubMed");
+        }
+    }
+    /**
+     * Get spelling suggestions for search terms
+     * @param query The search query to check
+     * @returns Corrected query if available, original query otherwise
+     */
+    async getSpellingSuggestions(query) {
+        try {
+            const spellResults = await this.eutils.espell({
+                term: query
+            });
+            if (spellResults.eSpellResult &&
+                spellResults.eSpellResult.CorrectedQuery &&
+                spellResults.eSpellResult.CorrectedQuery !== query) {
+                return spellResults.eSpellResult.CorrectedQuery;
+            }
+            return query;
+        }
+        catch (error) {
+            logger_1.Logger.warn("PubmedService", "Error getting spelling suggestions", error);
+            return query; // Return original query on error
+        }
+    }
+    /**
+     * Find related articles for a given PMID
+     * @param pmid PubMed ID to find related articles for
+     * @param limit Maximum number of related articles to return
+     * @returns Array of related PMIDs
+     */
+    async findRelatedArticles(pmid, limit = 5) {
+        try {
+            const linkResults = await this.eutils.elink({
+                dbfrom: 'pubmed',
+                id: pmid,
+                cmd: 'neighbor'
+            });
+            if (linkResults.linksets &&
+                linkResults.linksets[0] &&
+                linkResults.linksets[0].linksetdbs) {
+                for (const linksetdb of linkResults.linksets[0].linksetdbs) {
+                    if (linksetdb.linkname === 'pubmed_pubmed' && linksetdb.links) {
+                        return linksetdb.links.slice(0, limit);
+                    }
+                }
+            }
+            return [];
+        }
+        catch (error) {
+            logger_1.Logger.error("PubmedService", "Error finding related articles", error);
+            return [];
         }
     }
 }

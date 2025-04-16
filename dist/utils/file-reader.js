@@ -14,7 +14,7 @@ class FileReader {
      * @param filePath Path to the JSON file
      * @returns Parsed JSON data
      */
-    static ReadJsonFile(filePath) {
+    static readJsonFile(filePath) {
         try {
             const absolutePath = path_1.default.resolve(filePath);
             const fileContent = fs_1.default.readFileSync(absolutePath, 'utf8');
@@ -29,15 +29,15 @@ class FileReader {
      * Get specialty data from the specialties.json file
      * @returns Specialty data
      */
-    static GetSpecialties() {
-        return this.ReadJsonFile('data/specialties.json');
+    static getSpecialties() {
+        return this.readJsonFile('data/specialties.json');
     }
     /**
      * Get journal metrics data from the journal-metrics.json file
      * @returns Journal metrics data
      */
-    static GetJournalMetrics() {
-        return this.ReadJsonFile('data/journal-metrics.json');
+    static getJournalMetrics() {
+        return this.readJsonFile('data/journal-metrics.json');
     }
 }
 exports.default = FileReader;

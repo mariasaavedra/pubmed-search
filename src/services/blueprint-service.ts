@@ -29,8 +29,8 @@ class BlueprintService {
     const normalized_specialty = this.normalizeSpecialty(request.specialty);
     Logger.debug('BlueprintService', `Normalized specialty: ${request.specialty} -> ${normalized_specialty}`);
     
-    const normalized_topics = this.normalizeTopics(request.topics);
-    Logger.debug('BlueprintService', `Normalized ${request.topics.length} topics -> ${normalized_topics.length} unique topics`);
+    const normalized_topics = this.normalizeTopics(request.topics || []);
+    Logger.debug('BlueprintService', `Normalized ${request?.topics?.length || 0 } topics -> ${normalized_topics.length} unique topics`);
     
     // Verify specialty exists
     if (!this.validateSpecialty(normalized_specialty)) {
