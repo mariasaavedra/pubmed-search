@@ -271,7 +271,7 @@ class PubmedService {
           linkResults.linksets[0].linksetdbs) {
         
         for (const linksetdb of linkResults.linksets[0].linksetdbs) {
-          if (linksetdb.linkname === 'pubmed_pubmed') {
+          if (linksetdb.linkname === 'pubmed_pubmed' && linksetdb.links) {
             return linksetdb.links.slice(0, limit);
           }
         }

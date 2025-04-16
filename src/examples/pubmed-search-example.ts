@@ -60,21 +60,28 @@ async function runPubmedSearchExample() {
     const spellResult = await eutils.espell({
       term: 'cardimyopthy',
     });
-    console.log(`\nSpelling suggestion for "cardimyopthy": ${spellResult.eSpellResult.CorrectedQuery}`);
+    console.log(`\nSpelling suggestion for "cardimyopthy": ${
+      spellResult.eSpellResult?.CorrectedQuery || 'No correction available'
+    }`);
     
     // Get related articles for the first PMID
     if (pmids.length > 0) {
-      const linkResults = await eutils.elink({
-        dbfrom: 'pubmed',
-        id: pmids[0],
-        cmd: 'neighbor',
-      });
-      
-      const relatedPmids = linkResults.linksets[0]?.linksetdbs?.find(
-        db => db.linkname === 'pubmed_pubmed'
-      )?.links.slice(0, 3) || [];
-      
-      console.log(`\nRelated articles for PMID ${pmids[0]}: ${relatedPmids.join(', ')}`);
+      try {
+        const linkResults = await eutils.elink({
+          dbfrom: 'pubmed',
+          id: pmids[0],
+          cmd: 'neighbor',
+        });
+        
+        // Add extra protection against undefined responses
+        const relatedPmids = linkResults?.linksets?.[0]?.linksetdbs?.find(
+          db => db.linkname === 'pubmed_pubmed'
+        )?.links?.slice(0, 3) || [];
+        
+        console.log(`\nRelated articles for PMID ${pmids[0]}: ${relatedPmids.length > 0 ? relatedPmids.join(', ') : 'None found'}`);
+      } catch (error) {
+        console.log(`\nUnable to fetch related articles for PMID ${pmids[0]}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
     
     // Fetch and parse XML for the first article

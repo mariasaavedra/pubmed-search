@@ -129,7 +129,7 @@ export class EUtilitiesService {
   public async einfo(params: Partial<EInfoParams> = {}): Promise<EInfoDatabaseList | EInfoDatabaseInfo> {
     const fullParams = this.addCommonParams<EInfoParams>(params);
     return this.executeRequest<EInfoDatabaseList | EInfoDatabaseInfo>(
-      PUBMED_CONFIG.esearch, 
+      '/einfo.fcgi', 
       fullParams
     );
   }

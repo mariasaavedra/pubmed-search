@@ -291,13 +291,13 @@ export interface ELinkNeighborResponse {
     type: string;
     version: string;
   };
-  linksets: Array<{
-    dbfrom: string;
-    ids: string[];
+  linksets?: Array<{
+    dbfrom?: string;
+    ids?: string[];
     linksetdbs?: Array<{
-      dbto: string;
-      linkname: string;
-      links: string[];
+      dbto?: string;
+      linkname?: string;
+      links?: string[];
     }>;
     ERROR?: string;
   }>;
@@ -342,8 +342,8 @@ export interface ESpellResponse {
   eSpellResult: {
     Database: string;
     Query: string;
-    CorrectedQuery: string;
-    SpelledQuery: string;
+    CorrectedQuery?: string;
+    SpelledQuery?: string;
     ERROR?: string;
   };
 }

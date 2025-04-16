@@ -1,4 +1,4 @@
-import { Document as XMLDocument } from '@xmldom/xmldom';
+import { Document as XMLDocument, XMLSerializer } from '@xmldom/xmldom';
 import { JSDOM } from 'jsdom';
 import { Logger } from './logger';
 import { ContentExtractionResult } from '../types';
@@ -30,7 +30,7 @@ export class ArticleContentExtractor {
 
       // Store original XML for reference
       const serializer = new XMLSerializer();
-      result.original_xml = serializer.serializeToString(xmlDoc as unknown as Node);
+      result.original_xml = serializer.serializeToString(xmlDoc);
 
       // Extract full text by combining sections
       const articleNode = xmlDoc.getElementsByTagName('PubmedArticle').item(0);
@@ -131,7 +131,7 @@ export class ArticleContentExtractor {
         
         // Extract table content
         let tableContent = '';
-        const tableXML = new XMLSerializer().serializeToString(tableNode as unknown as Node);
+        const tableXML = new XMLSerializer().serializeToString(tableNode);
         
         // Format as string representation
         tableContent = `${label}\n${caption}\n\n${tableXML}`;
