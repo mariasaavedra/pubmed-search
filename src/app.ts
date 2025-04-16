@@ -11,7 +11,8 @@ dotenv.config();
 
 // Initialize Express app
 const app = express();
-const port = parseInt(process.env.PORT || '3000');
+const port = process.env.PORT || 3000;
+const host = '0.0.0.0'
 
 // Middleware
 app.use(express.json());
@@ -76,13 +77,13 @@ app.use(
 );
 
 // Start the server
-app.listen(port, "0.0.0.0", () => {
+app.listen(port as number, "0.0.0.0", () => {
   Logger.success(
     "Server",
     `PubMed Clinical Article Retriever API running on port ${port}`
   );
-  Logger.info("Server", `Health check: http://localhost:${port}/health`);
-  Logger.info("Server", `API documentation: http://localhost:${port}/`);
+  Logger.info("Server", `Health check: http://${host}:${port}/health`);
+  Logger.info("Server", `API documentation: http://${host}:${port}/`);
 
   // Log environment details
   Logger.debug("Config", "Environment configuration loaded", {
