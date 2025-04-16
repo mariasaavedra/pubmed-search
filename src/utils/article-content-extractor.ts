@@ -47,12 +47,20 @@ export class ArticleContentExtractor {
       let abstractText = '';
       const abstractNodes = articleNode.getElementsByTagName('AbstractText');
       
+      Logger.debug('ArticleContentExtractor', `Found ${abstractNodes.length} abstract nodes for PMID ${pmid}`);
+      
       // Check if we have labeled sections in the abstract
-      const hasLabeledSections = Array.from(abstractNodes).some(
-        node => node.hasAttribute('Label')
-      );
+      let hasLabeledSections = false;
+      for (let i = 0; i < abstractNodes.length; i++) {
+        const node = abstractNodes.item(i);
+        if (node && node.hasAttribute('Label')) {
+          hasLabeledSections = true;
+          break;
+        }
+      }
       
       if (hasLabeledSections) {
+        Logger.debug('ArticleContentExtractor', `Found labeled abstract sections for PMID ${pmid}`);
         // Process labeled abstract sections
         for (let i = 0; i < abstractNodes.length; i++) {
           const abstractNode = abstractNodes.item(i);
@@ -61,6 +69,8 @@ export class ArticleContentExtractor {
           const label = abstractNode.getAttribute('Label') || '';
           const text = abstractNode.textContent || '';
           
+          Logger.debug('ArticleContentExtractor', `Processing abstract section with label: ${label}`);
+          
           if (label && text) {
             abstractText += `${label}: ${text}\n\n`;
             
@@ -68,12 +78,16 @@ export class ArticleContentExtractor {
             const lowerLabel = label.toLowerCase();
             if (lowerLabel.includes('method')) {
               result.methods += text + '\n';
+              Logger.debug('ArticleContentExtractor', `Added METHODS section for PMID ${pmid}`);
             } else if (lowerLabel.includes('result')) {
               result.results += text + '\n';
+              Logger.debug('ArticleContentExtractor', `Added RESULTS section for PMID ${pmid}`);
             } else if (lowerLabel.includes('discussion')) {
               result.discussion += text + '\n';
-            } else if (lowerLabel.includes('conclusion')) {
+              Logger.debug('ArticleContentExtractor', `Added DISCUSSION section for PMID ${pmid}`);
+            } else if (lowerLabel.includes('conclusion') || lowerLabel.includes('conclusions')) {
               result.conclusion += text + '\n';
+              Logger.debug('ArticleContentExtractor', `Added CONCLUSION section for PMID ${pmid}`);
             }
           } else {
             abstractText += text + '\n\n';
