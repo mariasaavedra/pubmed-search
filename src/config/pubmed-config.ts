@@ -1,6 +1,7 @@
 import {
   CLINICALLY_USEFUL_JOURNALS,
   CARDIOLOGY_JOURNALS,
+  INTERNAL_MEDICINE_JOURNALS,
   createJournalFilter,
 } from "../data/journals";
 
@@ -19,14 +20,14 @@ export const PUBMED_CONFIG = {
     // Without API key: Limited to 3 requests/second
     with_api_key: {
       requests_per_second: 10,
-      max_concurrent: 5
+      max_concurrent: 5,
     },
     without_api_key: {
       requests_per_second: 3,
-      max_concurrent: 3
+      max_concurrent: 3,
     },
     // Time between requests in milliseconds (1000ms / requests_per_second)
-    min_time_with_key: 100,  // 10 requests per second
+    min_time_with_key: 100, // 10 requests per second
     min_time_without_key: 334, // ~3 requests per second
   },
   journal_quality: {
@@ -61,6 +62,17 @@ export const CORE_CLINICAL_JOURNALS_FILTER = createJournalFilter(
  */
 export const CARDIOLOGY_JOURNALS_FILTER =
   createJournalFilter(CARDIOLOGY_JOURNALS);
+/**
+ * Internal Medicine Journals filter
+ *
+ * This filter restricts search results to high-impact internal medicine-specific journals
+ * to improve the relevance of internal medicine searches.
+ *
+ * The full list of journals is available in data/internal-medicine-journals.json
+ */
+export const INTERNAL_MEDICINE_JOURNALS_FILTER = createJournalFilter(
+  INTERNAL_MEDICINE_JOURNALS
+);
 
 export const AGE_MAP = {
   "Newborn: Birth-1 month": "infant, newborn[mh]",

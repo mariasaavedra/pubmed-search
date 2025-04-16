@@ -1,7 +1,7 @@
 import { ProcessedBlueprint, QueryFilters } from "../types";
 import {
   DEFAULT_FILTER,
-  CORE_CLINICAL_JOURNALS_FILTER
+  CORE_CLINICAL_JOURNALS_FILTER,
 } from "../config/pubmed-config";
 import { PUBLICATION_TYPE_FILTER_MAP } from "../config/category-config";
 import { Logger } from "../utils/logger";
@@ -13,12 +13,16 @@ import JournalDatabaseService from "./journal-database.service";
  */
 class QueryService {
   private journalDbService: JournalDatabaseService;
-  
+
   constructor() {
     this.journalDbService = new JournalDatabaseService();
     // Initialize the journal database
-    this.journalDbService.initialize().catch(error => {
-      Logger.error("QueryService", "Failed to initialize journal database", error);
+    this.journalDbService.initialize().catch((error) => {
+      Logger.error(
+        "QueryService",
+        "Failed to initialize journal database",
+        error
+      );
     });
   }
   /**
@@ -30,56 +34,44 @@ class QueryService {
     try {
       // Create basic search term from specialty and topics (limited to avoid complexity)
       const searchTerm = this.createBasicSearchTerm(blueprint);
-      
+
       // Add date range
       const dateFilter = `"last ${
         blueprint.filters.year_range || 2
       } years"[PDat]`;
 
-      // Determine the appropriate journal filter based on specialty
-      let journalFilter = CORE_CLINICAL_JOURNALS_FILTER;
-
-      // Use dynamic journal filter from the journal database if available
-      if (blueprint.specialty) {
-        const specialtyLower = blueprint.specialty.toLowerCase();
-        const specialtyJournals = this.journalDbService.getJournalsBySpecialty(specialtyLower);
-        
-        if (specialtyJournals && specialtyJournals.length > 0) {
-          const dynamicFilter = this.journalDbService.createPubMedJournalFilter(specialtyJournals);
-          if (dynamicFilter) {
-            Logger.info("QueryService", `Using dynamic journal filter for specialty: ${specialtyLower}`);
-            journalFilter = dynamicFilter;
-          }
-        } else {
-          Logger.info("QueryService", `No specialty journals found for ${specialtyLower}, using core clinical journals`);
-        }
-      }
-
       // Add publication type filter if specified
       let pubTypeFilter = "";
-      if (blueprint.filters.article_types && blueprint.filters.article_types.length > 0) {
-        pubTypeFilter = this.buildPublicationTypeFilter(blueprint.filters.article_types);
-        Logger.debug("QueryService", `Added publication type filter: ${pubTypeFilter}`);
+      if (
+        blueprint.filters.article_types &&
+        blueprint.filters.article_types.length > 0
+      ) {
+        pubTypeFilter = this.buildPublicationTypeFilter(
+          blueprint.filters.article_types
+        );
+        Logger.debug(
+          "QueryService",
+          `Added publication type filter: ${pubTypeFilter}`
+        );
       }
 
       // Combine the parts - always wrap components in parentheses for safety
-      let query = `(${searchTerm}) AND (${DEFAULT_FILTER.narrow}) AND (${dateFilter}) AND (${journalFilter})`;
-      
+      let query = `(${searchTerm}) AND (${DEFAULT_FILTER.narrow}) AND (${dateFilter})`;
+
       // Add publication type filter if available
       if (pubTypeFilter) {
         query += ` AND (${pubTypeFilter})`;
       }
 
-      Logger.debug(
-        "QueryService",
-        `Built simplified search query: ${query}`
-      );
+      Logger.debug("QueryService", `Built simplified search query: ${query}`);
       console.log("QUERY BEING SENT TO PUBMED:", query);
 
       if (!this.validateQuery(query)) {
         Logger.warn("QueryService", "Query validation failed");
         // Return a basic valid query instead
-        return `${blueprint.specialty || blueprint.topics[0]} AND "last 2 years"[PDat] AND English[Language]`;
+        return `${
+          blueprint.specialty || blueprint.topics[0]
+        } AND "last 2 years"[PDat] AND English[Language]`;
       }
 
       return query;
@@ -96,20 +88,21 @@ class QueryService {
    */
   private buildPublicationTypeFilter(articleTypes: string[]): string {
     if (!articleTypes || articleTypes.length === 0) {
-      return '';
+      return "";
     }
-    
+
     const filters = articleTypes
-      .map(type => PUBLICATION_TYPE_FILTER_MAP[type] || `"${type}"[Publication Type]`)
+      .map(
+        (type) =>
+          PUBLICATION_TYPE_FILTER_MAP[type] || `"${type}"[Publication Type]`
+      )
       .filter(Boolean);
-      
+
     if (filters.length === 0) {
-      return '';
+      return "";
     }
-    
-    return filters.length === 1 
-      ? filters[0] 
-      : `(${filters.join(' OR ')})`;
+
+    return filters.length === 1 ? filters[0] : `(${filters.join(" OR ")})`;
   }
 
   /**
@@ -170,7 +163,7 @@ class QueryService {
         stack.pop();
       }
     }
-    
+
     if (stack.length !== 0) {
       Logger.warn(
         "QueryService",
@@ -181,10 +174,7 @@ class QueryService {
 
     // Check if query isn't too long (PubMed has limits)
     if (query.length > 800) {
-      Logger.warn(
-        "QueryService",
-        "Query validation failed: Query too long"
-      );
+      Logger.warn("QueryService", "Query validation failed: Query too long");
       return false;
     }
 

@@ -313,9 +313,9 @@ class JournalDatabaseService {
     // Add journal titles with MedlineTA as it's used by PubMed
     journals.forEach(journal => {
       if (journal.medline_abbr) {
-        filterParts.push(`"${journal.medline_abbr}"[Journal]`);
+        filterParts.push(`"${journal.medline_abbr}"[jo]`);
       } else {
-        filterParts.push(`"${journal.title}"[Journal]`);
+        filterParts.push(`"${journal.title}"[jo]`);
       }
       
       // Add ISSNs for even more accurate matching
