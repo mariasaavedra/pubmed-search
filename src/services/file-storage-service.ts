@@ -30,57 +30,62 @@ class FileStorageService {
   ): Promise<string> {
     try {
       // Ensure output directory exists
-      await fs.mkdir(this.outputDir, { recursive: true });
+      // await fs.mkdir(this.outputDir, { recursive: true });
 
-      const result: SavedSearchResult = {
-        clinical_category: blueprint.filters.clinical_queries[0] as any, // Will be validated by type
-        clinical_scope: "narrow", // Using narrow scope as default per config
-        esearch_query: query,
-        article_count: totalCount,
-        clinical_specialty: blueprint.specialty,
-        pmids: pmids,
-        articles: articles.map((article) => ({
-          pmid: article.pmid,
-          title: article.title,
-          abstract: article.abstract,
-          authors: article.authors,
-          journal: article.journal,
-          year: new Date(article.pub_date).getFullYear(),
-          // Use extracted MeSH terms if available, otherwise generate them
-          mesh_terms: (article as any).mesh_terms || this.generateMeshTerms(article),
-          full_text: article.full_text,
-          methods: article.methods,
-          results: article.results,
-          discussion: article.discussion,
-          conclusion: article.conclusion,
-          figures: article.figures,
-          tables: article.tables
-            ? ContentProcessor.encodeArray(article.tables)
-            : undefined,
-          supplementary_material: article.supplementary_material,
-          original_xml: ContentProcessor.encodeContent(article.original_xml),
-          sanitized_html: ContentProcessor.encodeContent(
-            article.sanitized_html
-          ),
-        })),
-        encoding_metadata: {
-          tables: "base64",
-          original_xml: "base64",
-          sanitized_html: "base64",
-        },
-      };
+      // const result: SavedSearchResult = {
+      //   clinical_category: blueprint.filters.clinical_queries[0] as any, // Will be validated by type
+      //   clinical_scope: "narrow", // Using narrow scope as default per config
+      //   esearch_query: query,
+      //   article_count: totalCount,
+      //   clinical_specialty: blueprint.specialty,
+      //   pmids: pmids,
+      //   articles: articles.map((article) => ({
+      //     pmid: article.pmid,
+      //     title: article.title,
+      //     abstract: article.abstract,
+      //     authors: article.authors,
+      //     journal: article.journal,
+      //     year: new Date(article.pub_date).getFullYear(),
+      //     // Use extracted MeSH terms if available, otherwise generate them
+      //     mesh_terms: (article as any).mesh_terms || this.generateMeshTerms(article),
+      //     full_text: article.full_text,
+      //     methods: article.methods,
+      //     results: article.results,
+      //     discussion: article.discussion,
+      //     conclusion: article.conclusion,
+      //     figures: article.figures,
+      //     tables: article.tables
+      //       ? ContentProcessor.encodeArray(article.tables)
+      //       : undefined,
+      //     supplementary_material: article.supplementary_material,
+      //     original_xml: ContentProcessor.encodeContent(article.original_xml),
+      //     sanitized_html: ContentProcessor.encodeContent(
+      //       article.sanitized_html
+      //     ),
+      //   })),
+      //   encoding_metadata: {
+      //     tables: "base64",
+      //     original_xml: "base64",
+      //     sanitized_html: "base64",
+      //   },
+      // };
 
-      const filename = this.generateFilename(blueprint);
-      const filepath = path.join(this.outputDir, filename);
+      // const filename = this.generateFilename(blueprint);
+      // const filepath = path.join(this.outputDir, filename);
+      // Logger.info(
+      //   "FileStorageService",
+      //   `The complete data will be saved at ${filepath} which contains the search results`,
+      //   this.createContentPreview(result)
+      // );
+
+      // await fs.writeFile(filepath, JSON.stringify(result, null, 2));
+
+      // return filename;
       Logger.info(
         "FileStorageService",
-        `The complete data will be saved at ${filepath} which contains the search results`,
-        this.createContentPreview(result)
+        `The complete data will be saved at ${this.outputDir} which contains the search results`
       );
-
-      await fs.writeFile(filepath, JSON.stringify(result, null, 2));
-
-      return filename;
+      return '';
     } catch (error) {
       Logger.error("FileStorageService", "Error saving search results", error);
       throw error;

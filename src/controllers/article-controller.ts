@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import BlueprintService from "../services/blueprint-service";
 import QueryService from "../services/query-service";
 import PubmedService from "../services/pubmed-service";
-import RankingService from "../services/ranking-service";
 import FileStorageService from "../services/file-storage-service";
 import { ArticleRequest } from "../types";
 import { Logger } from "../utils/logger";
@@ -14,16 +13,11 @@ class ArticleController {
   private blueprint_service: BlueprintService;
   private query_service: QueryService;
   private pubmed_service: PubmedService;
-  private ranking_service: RankingService;
-
-  private file_storage_service: FileStorageService;
 
   constructor() {
     this.blueprint_service = new BlueprintService();
     this.query_service = new QueryService();
     this.pubmed_service = new PubmedService();
-    this.ranking_service = new RankingService();
-    this.file_storage_service = new FileStorageService();
   }
 
   /**
@@ -46,11 +40,9 @@ class ArticleController {
       // Process the blueprint
       const blueprint =
         this.blueprint_service.processBlueprint(article_request);
-      Logger.debug("ArticleController", "Processed blueprint", blueprint);
 
       // Build search query
       const query = this.query_service.buildSearchQuery(blueprint);
-      Logger.debug("ArticleController", "Constructed query", query);
 
       // Validate query
       if (!this.query_service.validateQuery(query)) {
@@ -108,12 +100,6 @@ class ArticleController {
 
       // Fetch article details
       const articles = await this.pubmed_service.fetchArticleDetails(pmids);
-      Logger.debug(
-        "ArticleController",
-        `Fetched details for ${articles.length} articles`
-      );
-
-      Logger.debug("ArticleController", "Articles ranked successfully");
       const duration = Date.now() - start_time;
 
       // Return results

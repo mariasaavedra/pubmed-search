@@ -3,11 +3,7 @@ import { parseStringPromise } from "xml2js";
 import dotenv from "dotenv";
 import { PUBMED_CONFIG } from "../config/pubmed-config";
 import RateLimiter from "../utils/rate-limiter";
-import ArticleContentService from "./article-content-service";
-import {
-  Article,
-  PubmedSearchResponse,
-} from "../types";
+import { Article, PubmedSearchResponse } from "../types";
 import { Logger } from "../utils/logger";
 
 // Load environment variables
@@ -20,7 +16,6 @@ class PubmedService {
   private base_url: string;
   private api_key: string | undefined;
   private rate_limiter: RateLimiter;
-  private content_service: ArticleContentService;
 
   constructor() {
     this.base_url = PUBMED_CONFIG.base_url;
@@ -31,9 +26,6 @@ class PubmedService {
       PUBMED_CONFIG.rate_limit.max_concurrent,
       PUBMED_CONFIG.rate_limit.min_time
     );
-
-    // Initialize content service
-    this.content_service = new ArticleContentService();
 
     Logger.debug("PubmedService", "Initialized with configuration", {
       base_url: this.base_url,
@@ -126,9 +118,7 @@ class PubmedService {
    * @param pmids Array of PubMed IDs
    * @returns Array of article details
    */
-  public async fetchArticleDetails(
-    pmids: string[]
-  ): Promise<Article[]> {
+  public async fetchArticleDetails(pmids: string[]): Promise<Article[]> {
     if (pmids.length === 0) {
       Logger.debug("PubmedService", "No PMIDs provided, returning empty array");
       return [];
