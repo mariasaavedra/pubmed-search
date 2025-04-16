@@ -36,7 +36,7 @@ class QueryService {
       }
 
       // Combine the parts - always wrap components in parentheses for safety
-      const query = `(${searchTerm}) AND (${DEFAULT_FILTER.broad}) AND (${dateFilter}) AND (${journalFilter})`;
+      const query = `(${searchTerm}) AND (${DEFAULT_FILTER.narrow}) AND (${dateFilter}) AND (${journalFilter})`;
 
       Logger.debug(
         "QueryService",
