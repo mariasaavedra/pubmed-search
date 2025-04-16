@@ -5,6 +5,15 @@ const router = Router();
 const controller = new ArticleController();
 
 /**
+ * @route POST /api/articles/specialty
+ * @description Get articles based on specialty only
+ */
+router.post('/api/articles/specialty', (req, res) => {
+  console.log('Received specialty request:', req.body);
+  return controller.getArticlesBySpecialty(req, res);
+});
+
+/**
  * @route POST /api/articles
  * @description Get articles based on a clinical blueprint
  */

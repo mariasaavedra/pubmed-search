@@ -32,14 +32,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Create a POST route handler directly on app
-app.post('/api/articles/specialty', (req, res) => {
-  console.log('Received specialty request:', req.body);
-  const controller = new ArticleController();
-  return controller.getArticlesBySpecialty(req, res);
-});
-
-// Mount other routes
+// Mount routes
 app.use(articleRoutes);
 
 // Health check endpoint

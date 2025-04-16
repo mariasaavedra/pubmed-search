@@ -1,4 +1,5 @@
 import MeshMapper from '../utils/mesh-mapper';
+import BlueprintService from './blueprint-service';
 import { ProcessedBlueprint, QueryFilters } from '../types';
 import { FILTER_MAP, AGE_MAP, DEFAULT_FILTER } from '../config/pubmed-config';
 
@@ -6,6 +7,11 @@ import { FILTER_MAP, AGE_MAP, DEFAULT_FILTER } from '../config/pubmed-config';
  * Service for constructing optimized PubMed search queries
  */
 class QueryService {
+  private blueprint_service: BlueprintService;
+  
+  constructor() {
+    this.blueprint_service = new BlueprintService();
+  }
   /**
    * Build a complete PubMed search query based on a processed blueprint
    * @param blueprint The processed blueprint
@@ -15,11 +21,41 @@ class QueryService {
     // Create the core topic query
     const topic_query = this.buildTopicQuery(blueprint.topics);
     
+    // Add specialty MeSH terms if available from BlueprintService
+    const specialty_mesh_terms = this.blueprint_service.getSpecialtyMeshTerms(blueprint.specialty);
+    const specialty_query = this.buildSpecialtyQuery(specialty_mesh_terms);
+    
     // Add filters
     const filter_query = this.applyFilters(blueprint.filters);
     
     // Combine all query parts
-    return `(${topic_query}) AND (${filter_query})`;
+    // This ensures articles match the specialty, at least one of the topics, and the filters
+    if (specialty_query) {
+      return `(${specialty_query}) AND (${topic_query}) AND (${filter_query})`;
+    } else {
+      return `(${topic_query}) AND (${filter_query})`;
+    }
+  }
+
+  /**
+   * Build a query string for specialty MeSH terms
+   * @param meshTerms Array of specialty MeSH terms
+   * @returns Specialty query string or empty string if no terms
+   */
+  private buildSpecialtyQuery(meshTerms: string[]): string {
+    if (!meshTerms || meshTerms.length === 0) {
+      return '';
+    }
+
+    // Format each MeSH term
+    const meshQueries = meshTerms.map(term => 
+      `"${term}"[MeSH Terms]`
+    );
+    
+    // Join terms with OR (we want articles matching any relevant specialty term)
+    return meshQueries.length > 1
+      ? `(${meshQueries.join(' OR ')})`
+      : meshQueries[0];
   }
 
   /**
@@ -49,34 +85,41 @@ class QueryService {
       return `(${mesh_query})`;
     });
 
-    // Join topics with AND (since we want articles that mention both topics)
+    // Join topics with OR (since we want articles that mention any of the topics)
     return topics.length > 1 
-      ? `(${topic_queries.join(' AND ')})` 
+      ? `(${topic_queries.join(' OR ')})` 
       : topic_queries[0];
   }
 
   /**
    * Apply filters to the query
    * @param filters Query filters
+   * @param filterScope Whether to use 'broad' or 'narrow' filter scope (defaults to 'broad' for better recall)
    * @returns Filter query string
    */
-  public applyFilters(filters: QueryFilters): string {
+  public applyFilters(filters: QueryFilters, filterScope: 'broad' | 'narrow' = 'broad'): string {
     const filter_parts: string[] = [];
 
-    // Apply study type filters
+    // PubMed best practices: always add English language filter and publication types
+    filter_parts.push(DEFAULT_FILTER.narrow);
+
+    // Apply clinical query filters (therapy, diagnosis, etc.)
     if (filters.clinical_queries && filters.clinical_queries.length > 0) {
-      const study_filters = filters.clinical_queries
-        .filter(type => FILTER_MAP[type as keyof typeof FILTER_MAP])
-        .map(type => FILTER_MAP[type as keyof typeof FILTER_MAP].broad);
+      // Get valid filters
+      const validFilters = filters.clinical_queries
+        .filter(type => FILTER_MAP[type as keyof typeof FILTER_MAP]);
       
-      if (study_filters.length > 0) {
-        // Each filter is already wrapped in parentheses from the config
-        // Just join them with OR and wrap the whole thing
-        filter_parts.push(`(${study_filters.join(' OR ')})`);
+      if (validFilters.length > 0) {
+        // Apply each filter individually with the specified scope
+        const clinical_filter_parts = validFilters.map(type => 
+          FILTER_MAP[type as keyof typeof FILTER_MAP][filterScope]
+        );
+        
+        // Join clinical filters with OR for better results (articles matching ANY filter)
+        if (clinical_filter_parts.length > 0) {
+          filter_parts.push(`(${clinical_filter_parts.join(' OR ')})`);
+        }
       }
-    } else {
-      // Use default filter if no specific filters provided
-      filter_parts.push(DEFAULT_FILTER.narrow);
     }
 
     // Apply age group filter if specified
@@ -87,6 +130,9 @@ class QueryService {
     // Apply date range filter
     const year_range = filters.year_range || 3;
     filter_parts.push(`"last ${year_range} years"[PDat]`);
+
+    // Log the constructed filter query for debugging
+    console.log('Constructed filter query:', filter_parts.join(' AND '));
 
     // Join all filter parts with AND
     return filter_parts.join(' AND ');
