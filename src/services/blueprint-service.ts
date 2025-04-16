@@ -13,7 +13,7 @@ class BlueprintService {
   }>;
 
   constructor() {
-    this.specialties = FileReader.GetSpecialties();
+    this.specialties = FileReader.getSpecialties();
     Logger.debug('BlueprintService', `Initialized with ${Object.keys(this.specialties).length} specialties`);
   }
 
@@ -22,18 +22,18 @@ class BlueprintService {
    * @param request The blueprint request
    * @returns Processed blueprint
    */
-  public ProcessBlueprint(request: ArticleRequest): ProcessedBlueprint {
+  public processBlueprint(request: ArticleRequest): ProcessedBlueprint {
     Logger.debug('BlueprintService', `Processing blueprint request`, request);
     
     // Normalize and validate inputs
-    const normalized_specialty = this.NormalizeSpecialty(request.specialty);
+    const normalized_specialty = this.normalizeSpecialty(request.specialty);
     Logger.debug('BlueprintService', `Normalized specialty: ${request.specialty} -> ${normalized_specialty}`);
     
-    const normalized_topics = this.NormalizeTopics(request.topics);
+    const normalized_topics = this.normalizeTopics(request.topics);
     Logger.debug('BlueprintService', `Normalized ${request.topics.length} topics -> ${normalized_topics.length} unique topics`);
     
     // Verify specialty exists
-    if (!this.ValidateSpecialty(normalized_specialty)) {
+    if (!this.validateSpecialty(normalized_specialty)) {
       Logger.error('BlueprintService', `Invalid specialty: ${normalized_specialty}`);
       throw new Error(`Invalid specialty: ${normalized_specialty}`);
     }
@@ -61,7 +61,7 @@ class BlueprintService {
    * @param specialty Specialty name
    * @returns Normalized specialty name
    */
-  public NormalizeSpecialty(specialty: string): string {
+  public normalizeSpecialty(specialty: string): string {
     const normalized = specialty.toLowerCase().trim();
     
     // Handle common aliases
@@ -85,7 +85,7 @@ class BlueprintService {
    * @param specialty Specialty to validate
    * @returns True if the specialty is valid
    */
-  public ValidateSpecialty(specialty: string): boolean {
+  public validateSpecialty(specialty: string): boolean {
     return !!this.specialties[specialty];
   }
 
@@ -94,10 +94,10 @@ class BlueprintService {
    * @param specialty The specialty
    * @returns Array of common topics for the specialty
    */
-  public GetSuggestedTopics(specialty: string): string[] {
-    const normalized_specialty = this.NormalizeSpecialty(specialty);
+  public getSuggestedTopics(specialty: string): string[] {
+    const normalized_specialty = this.normalizeSpecialty(specialty);
     
-    if (!this.ValidateSpecialty(normalized_specialty)) {
+    if (!this.validateSpecialty(normalized_specialty)) {
       return [];
     }
     
@@ -109,7 +109,7 @@ class BlueprintService {
    * @param topics Array of topics
    * @returns Normalized topics
    */
-  public NormalizeTopics(topics: string[]): string[] {
+  public normalizeTopics(topics: string[]): string[] {
     // Process each topic and remove duplicates
     const normalized = topics
       .map(topic => topic.toLowerCase().trim())
@@ -124,10 +124,10 @@ class BlueprintService {
    * @param specialty The specialty
    * @returns Array of MeSH terms for the specialty
    */
-  public GetSpecialtyMeshTerms(specialty: string): string[] {
-    const normalized_specialty = this.NormalizeSpecialty(specialty);
+  public getSpecialtyMeshTerms(specialty: string): string[] {
+    const normalized_specialty = this.normalizeSpecialty(specialty);
     
-    if (!this.ValidateSpecialty(normalized_specialty)) {
+    if (!this.validateSpecialty(normalized_specialty)) {
       return [];
     }
     
@@ -138,7 +138,7 @@ class BlueprintService {
    * Get all specialties
    * @returns All specialties data
    */
-  public GetSpecialties(): Record<string, {
+  public getSpecialties(): Record<string, {
     common_topics: string[];
     mesh_terms: string[];
     default_filters: string[];

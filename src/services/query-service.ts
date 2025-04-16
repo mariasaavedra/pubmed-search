@@ -11,12 +11,12 @@ class QueryService {
    * @param blueprint The processed blueprint
    * @returns PubMed search query string
    */
-  public BuildSearchQuery(blueprint: ProcessedBlueprint): string {
+  public buildSearchQuery(blueprint: ProcessedBlueprint): string {
     // Create the core topic query
-    const topic_query = this.BuildTopicQuery(blueprint.topics);
+    const topic_query = this.buildTopicQuery(blueprint.topics);
     
     // Add filters
-    const filter_query = this.ApplyFilters(blueprint.filters);
+    const filter_query = this.applyFilters(blueprint.filters);
     
     // Combine all query parts
     return `(${topic_query}) AND (${filter_query})`;
@@ -27,14 +27,14 @@ class QueryService {
    * @param topics Array of topics
    * @returns Topic query string
    */
-  public BuildTopicQuery(topics: string[]): string {
+  public buildTopicQuery(topics: string[]): string {
     if (topics.length === 0) {
       throw new Error('At least one topic is required');
     }
 
     // Map each topic to MeSH terms and format for search
     const topic_queries = topics.map(topic => {
-      const mesh_terms = MeshMapper.MapTerm(topic);
+      const mesh_terms = MeshMapper.mapTerm(topic);
       
       if (mesh_terms.length === 0) {
         // If no MeSH terms, use the original topic with various fields
@@ -60,7 +60,7 @@ class QueryService {
    * @param filters Query filters
    * @returns Filter query string
    */
-  public ApplyFilters(filters: QueryFilters): string {
+  public applyFilters(filters: QueryFilters): string {
     const filter_parts: string[] = [];
 
     // Apply study type filters
@@ -97,7 +97,7 @@ class QueryService {
    * @param query The query to validate
    * @returns True if the query is valid
    */
-  public ValidateQuery(query: string): boolean {
+  public validateQuery(query: string): boolean {
     // Check minimum query length
     if (query.length < 10) {
       console.log('Query validation failed: Too short');
@@ -165,7 +165,7 @@ class QueryService {
    * @param limit Results per page
    * @returns Query with pagination parameters
    */
-  public AddPagination(query: string, page: number = 1, limit: number = 10): string {
+  public addPagination(query: string, page: number = 1, limit: number = 10): string {
     const retmax = Math.min(Math.max(1, limit), 100); // Limit between 1-100
     const retstart = (Math.max(1, page) - 1) * retmax;
     

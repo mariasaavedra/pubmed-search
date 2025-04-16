@@ -167,3 +167,19 @@ export interface QueryFilters {
   age_group?: string;
   year_range: number;
 }
+
+/**
+ * Content extraction result from article processing
+ */
+export interface ContentExtractionResult {
+  full_text: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures: string[];
+  tables: string[];
+  supplementary_material: string[];
+  original_xml?: string;
+  sanitized_html?: string;
+}

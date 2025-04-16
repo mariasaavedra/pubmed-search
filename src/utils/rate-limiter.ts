@@ -24,7 +24,7 @@ class RateLimiter {
   /**
    * Refill tokens based on elapsed time
    */
-  private RefillTokens(): void {
+  private refillTokens(): void {
     const now = Date.now();
     const elapsed = now - this.last_refill;
     const new_tokens = Math.floor((elapsed / this.interval) * this.max_tokens);
@@ -48,8 +48,8 @@ class RateLimiter {
    * Check if a request can be made
    * @returns True if the request is allowed, false otherwise
    */
-  public CheckLimit(): boolean {
-    this.RefillTokens();
+  public checkLimit(): boolean {
+    this.refillTokens();
     return this.tokens > 0;
   }
 
@@ -57,8 +57,8 @@ class RateLimiter {
    * Wait for a token to become available
    * @returns Promise that resolves when a token is available
    */
-  public async WaitForSlot(): Promise<void> {
-    this.RefillTokens();
+  public async waitForSlot(): Promise<void> {
+    this.refillTokens();
 
     if (this.tokens > 0) {
       this.tokens--;
@@ -73,7 +73,7 @@ class RateLimiter {
   /**
    * Reset the rate limiter
    */
-  public ResetCounter(): void {
+  public resetCounter(): void {
     this.tokens = this.max_tokens;
     this.last_refill = Date.now();
   }

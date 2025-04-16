@@ -52,7 +52,7 @@ class PubmedService {
    * @param limit Results per page
    * @returns Search results with PMIDs
    */
-  public async SearchArticles(
+  public async searchArticles(
     query: string,
     page: number = 1,
     limit: number = PUBMED_CONFIG.page_size
@@ -63,7 +63,7 @@ class PubmedService {
     );
 
     // Wait for rate limiting slot
-    await this.rate_limiter.WaitForSlot();
+    await this.rate_limiter.waitForSlot();
     Logger.debug("PubmedService", "Rate limit slot acquired");
 
     try {
@@ -126,7 +126,7 @@ class PubmedService {
    * @param pmids Array of PubMed IDs
    * @returns Array of article details
    */
-  public async FetchArticleDetails(
+  public async fetchArticleDetails(
     pmids: string[]
   ): Promise<Article[]> {
     if (pmids.length === 0) {
@@ -140,7 +140,7 @@ class PubmedService {
     );
 
     // Wait for rate limiting slot
-    await this.rate_limiter.WaitForSlot();
+    await this.rate_limiter.waitForSlot();
     Logger.debug("PubmedService", "Rate limit slot acquired for fetch details");
 
     try {
@@ -190,11 +190,11 @@ class PubmedService {
    * @param query PubMed search query
    * @returns Count of matching articles
    */
-  public async GetArticleCount(query: string): Promise<number> {
+  public async getArticleCount(query: string): Promise<number> {
     Logger.debug("PubmedService", "Getting article count for query");
 
     // Wait for rate limiting slot
-    await this.rate_limiter.WaitForSlot();
+    await this.rate_limiter.waitForSlot();
     Logger.debug("PubmedService", "Rate limit slot acquired for article count");
 
     try {

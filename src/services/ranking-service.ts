@@ -12,7 +12,7 @@ class RankingService {
   private sjr_threshold: number;
 
   constructor() {
-    this.journal_metrics = FileReader.GetJournalMetrics();
+    this.journal_metrics = FileReader.getJournalMetrics();
     
     // Load thresholds from config
     this.impact_factor_threshold = PUBMED_CONFIG.journal_quality.impact_factor_threshold;
@@ -26,11 +26,11 @@ class RankingService {
    * @param topics Array of search topics
    * @returns Ranked articles
    */
-  public RankArticles(articles: ParsedArticleData[], topics: string[]): RankedArticleData[] {
+  public rankArticles(articles: ParsedArticleData[], topics: string[]): RankedArticleData[] {
     // Score each article
     const scored_articles = articles.map(article => {
-      const relevance_score = this.CalculateRelevanceScore(article, topics);
-      const journal_score = this.CalculateJournalScore(article.journal);
+      const relevance_score = this.calculateRelevanceScore(article, topics);
+      const journal_score = this.calculateJournalScore(article.journal);
 
       return {
         ...article,
@@ -55,7 +55,7 @@ class RankingService {
    * @param topics Search topics
    * @returns Relevance score (0-10)
    */
-  public CalculateRelevanceScore(article: ParsedArticleData, topics: string[]): number {
+  public calculateRelevanceScore(article: ParsedArticleData, topics: string[]): number {
     if (!article || !topics || topics.length === 0) {
       return 0;
     }
@@ -96,7 +96,7 @@ class RankingService {
    * @param journal_name Journal name
    * @returns Journal impact score (0-10)
    */
-  public CalculateJournalScore(journal_name: string): number {
+  public calculateJournalScore(journal_name: string): number {
     if (!journal_name) {
       return 0;
     }
@@ -148,7 +148,7 @@ class RankingService {
    * @param min_score Minimum score threshold
    * @returns Filtered articles
    */
-  public FilterArticlesByScore(
+  public filterArticlesByScore(
     articles: RankedArticleData[], 
     min_score: number = 5
   ): RankedArticleData[] {

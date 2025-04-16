@@ -147,7 +147,7 @@ class FileStorageService {
     
     // Add terms from the title
     if (article.title) {
-      const titleTerms = MeshMapper.MapTerm(article.title);
+      const titleTerms = MeshMapper.mapTerm(article.title);
       terms.push(...titleTerms);
     }
     
@@ -162,7 +162,7 @@ class FileStorageService {
       
       // Generate terms from key phrases
       keyPhrases.forEach(phrase => {
-        const phraseTerms = MeshMapper.MapTerm(phrase);
+        const phraseTerms = MeshMapper.mapTerm(phrase);
         terms.push(...phraseTerms);
       });
     }

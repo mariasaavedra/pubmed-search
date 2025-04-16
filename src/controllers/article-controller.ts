@@ -31,7 +31,7 @@ class ArticleController {
    * @param req Express request
    * @param res Express response
    */
-  public async GetArticles(req: Request, res: Response): Promise<void> {
+  public async getArticles(req: Request, res: Response): Promise<void> {
     const start_time = Date.now();
 
     try {
@@ -45,15 +45,15 @@ class ArticleController {
 
       // Process the blueprint
       const blueprint =
-        this.blueprint_service.ProcessBlueprint(article_request);
+        this.blueprint_service.processBlueprint(article_request);
       Logger.debug("ArticleController", "Processed blueprint", blueprint);
 
       // Build search query
-      const query = this.query_service.BuildSearchQuery(blueprint);
+      const query = this.query_service.buildSearchQuery(blueprint);
       Logger.debug("ArticleController", "Constructed query", query);
 
       // Validate query
-      if (!this.query_service.ValidateQuery(query)) {
+      if (!this.query_service.validateQuery(query)) {
         res.status(400).json({
           error: "Invalid query construction",
         });
@@ -61,14 +61,14 @@ class ArticleController {
       }
 
       // Get total count (for pagination info)
-      const total_count = await this.pubmed_service.GetArticleCount(query);
+      const total_count = await this.pubmed_service.getArticleCount(query);
       Logger.debug(
         "ArticleController",
         `Found ${total_count} total matching articles`
       );
 
       // Search articles
-      const pmids = await this.pubmed_service.SearchArticles(
+      const pmids = await this.pubmed_service.searchArticles(
         query,
         article_request.page || 1,
         article_request.limit || 10
@@ -107,7 +107,7 @@ class ArticleController {
       );
 
       // Fetch article details
-      const articles = await this.pubmed_service.FetchArticleDetails(pmids);
+      const articles = await this.pubmed_service.fetchArticleDetails(pmids);
       Logger.debug(
         "ArticleController",
         `Fetched details for ${articles.length} articles`
@@ -147,7 +147,7 @@ class ArticleController {
    * @param req Express request
    * @param res Express response
    */
-  public GetSuggestedTopics(req: Request, res: Response): void {
+  public getSuggestedTopics(req: Request, res: Response): void {
     try {
       const { specialty } = req.params;
       Logger.debug(
@@ -163,7 +163,7 @@ class ArticleController {
         return;
       }
 
-      const topics = this.blueprint_service.GetSuggestedTopics(specialty);
+      const topics = this.blueprint_service.getSuggestedTopics(specialty);
       Logger.debug(
         "ArticleController",
         `Found ${topics.length} topics for ${specialty}`
@@ -190,10 +190,10 @@ class ArticleController {
    * @param _req Express request
    * @param res Express response
    */
-  public GetSpecialties(_req: Request, res: Response): void {
+  public getSpecialties(_req: Request, res: Response): void {
     try {
       Logger.debug("ArticleController", "Getting all available specialties");
-      const specialties = this.blueprint_service.GetSpecialties();
+      const specialties = this.blueprint_service.getSpecialties();
       const specialty_list = Object.keys(specialties);
 
       Logger.debug(

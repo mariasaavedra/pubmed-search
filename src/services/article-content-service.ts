@@ -27,7 +27,7 @@ class ArticleContentService {
     original_xml?: string
   ): Promise<ContentExtractionResult> {
     try {
-      await this.rate_limiter.WaitForSlot();
+      await this.rate_limiter.waitForSlot();
       Logger.debug(
         "ArticleContentService",
         `Extracting content for PMID: ${pmid}`
