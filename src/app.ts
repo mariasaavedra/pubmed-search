@@ -18,6 +18,9 @@ const host = '0.0.0.0'
 // Basic middleware
 app.use(cors());
 
+// Serve static files from public directory
+app.use(express.static('public'));
+
 // Body parsing middleware - MUST BE BEFORE ROUTES
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
