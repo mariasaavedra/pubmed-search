@@ -17,17 +17,20 @@ class ArticleController {
    * @param req Express request
    * @param res Express response
    */
-  public async getArticles(req: Request, res: Response): Promise<void | Response> {
+  public async getArticles(
+    req: Request,
+    res: Response
+  ): Promise<void | Response> {
     try {
       Logger.debug("ArticleController", "Received article request", req.body);
 
       // Validate request body
-      if (!req.body || typeof req.body !== 'object') {
+      if (!req.body || typeof req.body !== "object") {
         return res.status(400).json({
           error: "Bad Request",
           message: "Request body must be a valid JSON object",
           timestamp: new Date().toISOString(),
-          path: req.path
+          path: req.path,
         });
       }
 
@@ -37,7 +40,7 @@ class ArticleController {
       const requestData = {
         ...req.body,
         page,
-        limit
+        limit,
       };
 
       const result = await this.article_service.getArticles(requestData);
@@ -55,7 +58,7 @@ class ArticleController {
           error: "An error occurred while processing your request",
           message: error instanceof Error ? error.message : "Unknown error",
           timestamp: new Date().toISOString(),
-          path: req.path
+          path: req.path,
         });
     }
   }
@@ -92,7 +95,7 @@ class ArticleController {
           error: "An error occurred while retrieving suggested topics",
           message: error instanceof Error ? error.message : "Unknown error",
           timestamp: new Date().toISOString(),
-          path: req.path
+          path: req.path,
         });
     }
   }
@@ -114,21 +117,21 @@ class ArticleController {
       );
 
       // Validate request body
-      if (!req.body || typeof req.body !== 'object') {
+      if (!req.body || typeof req.body !== "object") {
         return res.status(400).json({
           error: "Bad Request",
           message: "Request body must be a valid JSON object",
           timestamp: new Date().toISOString(),
-          path: req.path
+          path: req.path,
         });
       }
 
-      if (!req.body.specialty || typeof req.body.specialty !== 'string') {
+      if (!req.body.specialty || typeof req.body.specialty !== "string") {
         return res.status(400).json({
           error: "Bad Request",
           message: "specialty must be a non-empty string",
           timestamp: new Date().toISOString(),
-          path: req.path
+          path: req.path,
         });
       }
 
@@ -140,12 +143,13 @@ class ArticleController {
       const { topics: allTopics } = this.article_service.getSuggestedTopics(
         req.body.specialty
       );
-      
-      // Only use the first 5 topics to keep the query manageable
-      const topics = allTopics.slice(0, 5);
-      
-      // Log the selected topics
-      console.log('Using topics:', topics);
+
+      // Only use the random 5 topics to keep the query manageable
+      const topics = this.getRandomItems(allTopics, 5) as string[]; // Log the selected topics
+      Logger.debug(
+        "ArticleController",
+        `Randomly selected topics: ${topics.join(", ")}`
+      );
 
       const result = await this.article_service.getArticles({
         specialty: req.body.specialty,
@@ -175,9 +179,28 @@ class ArticleController {
           error: "An error occurred while processing your request",
           message: error instanceof Error ? error.message : "Unknown error",
           timestamp: new Date().toISOString(),
-          path: req.path
+          path: req.path,
         });
     }
+  }
+
+  public getRandomItems<T>(arr: T[], count: number): T[] {
+    if (count > arr.length) {
+      throw new Error("Count cannot be greater than the array length.");
+    }
+
+    const shuffled = [...arr];
+    const randomIndices = new Uint32Array(count);
+    crypto.getRandomValues(randomIndices);
+
+    for (let i = 0; i < count; i++) {
+      const randomIndex = randomIndices[i] % shuffled.length;
+      [shuffled[i], shuffled[randomIndex]] = [
+        shuffled[randomIndex],
+        shuffled[i],
+      ];
+    }
+    return shuffled.slice(0, count);
   }
 
   public getSpecialties(req: Request, res: Response): void {
@@ -191,7 +214,7 @@ class ArticleController {
         error: "An error occurred while retrieving specialties",
         message: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
-        path: req.path
+        path: req.path,
       });
     }
   }
