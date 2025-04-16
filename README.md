@@ -20,6 +20,14 @@ This application serves as a backend service that:
 
 See pubmed.config.js for API keys and settings.
 
+Files of importance:
+
+- `article-controller.ts`: Handles API requests and responses.
+- `pubmed-service.ts`: Interacts with the PubMed API.
+- `pubmed.config.js`: Configuration for PubMed API keys and settings.
+- `specialties.json`: Contains specialty-specific topics and MeSH terms.
+- `journal-metrics.json`: Contains journal impact factors and metrics.
+
 ## Usage
 
 ### Starting the Server
@@ -34,16 +42,79 @@ npm start
 
 Retrieves articles based on a clinical blueprint.
 
-**Request Body:**
+**Request Body (ArticleRequest):**
+
+```typescript
+interface ArticleRequest {
+  specialty: string;
+  topics: string[];
+  filters?: {
+    clinical_queries?: string[];
+    age_group?: string;
+    year_range?: number;
+  };
+  page?: number;
+  limit?: number;
+}
+```
+
+**Example Request:**
 
 ```json
 {
   "specialty": "Cardiology",
-  "topic": "SGLT2 Inhibitors"
+  "topics": ["SGLT2 Inhibitors"],
+  "filters": {
+    "clinical_queries": ["Therapy"],
+    "year_range": 3
+  },
+  "page": 1,
+  "limit": 10
 }
 ```
 
-**Response:**
+**Response (ArticleResponse):**
+
+```typescript
+interface ArticleResponse {
+  articles: Article[];
+  meta: {
+    total: number;
+    processing_time: number;
+    encoding?: {
+      tables: "base64";
+      original_xml: "base64";
+      sanitized_html: "base64";
+    };
+  };
+}
+
+interface Article {
+  pmid: string;
+  title: string;
+  authors: string[];
+  journal: string;
+  pub_date: string;
+  abstract: string;
+  url: string;
+  scores: {
+    relevance: number;
+    journal_impact: number;
+  };
+  full_text?: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures?: string[];
+  tables?: string[];
+  supplementary_material?: string[];
+  original_xml?: string;
+  sanitized_html?: string;
+}
+```
+
+**Example Response:**
 
 ```json
 {
@@ -55,9 +126,52 @@ Retrieves articles based on a clinical blueprint.
       "journal": "New England Journal of Medicine",
       "pub_date": "2025-02-15",
       "abstract": "...",
-      "url": "https://pubmed.ncbi.nlm.nih.gov/35123456/"
+      "url": "https://pubmed.ncbi.nlm.nih.gov/35123456/",
+      "scores": {
+        "relevance": 0.95,
+        "journal_impact": 0.88
+      },
+      "full_text": "...",
+      "methods": "...",
+      "results": "...",
+      "discussion": "...",
+      "conclusion": "..."
     }
-  ]
+  ],
+  "meta": {
+    "total": 42,
+    "processing_time": 1240,
+    "encoding": {
+      "tables": "base64",
+      "original_xml": "base64",
+      "sanitized_html": "base64"
+    }
+  }
+}
+```
+
+#### GET /api/specialties
+
+Returns a list of all available medical specialties.
+
+**Response:**
+
+```json
+{
+  "specialties": ["Cardiology", "Neurology", "Oncology", "Endocrinology", "Pediatrics"]
+}
+```
+
+#### GET /api/specialties/:specialty/topics
+
+Returns suggested topics for a specific specialty.
+
+**Response:**
+
+```json
+{
+  "specialty": "Cardiology",
+  "topics": ["Heart Failure", "Hypertension", "SGLT2 Inhibitors", "Atrial Fibrillation"]
 }
 ```
 
@@ -152,47 +266,63 @@ Create a new scoring module in `src/services/ranking/` and register it in `ranki
 
 Update the specialty-specific configurations in `config/specialties/`.
 
-Features Implemented
-Blueprint Processing: Normalizes and validates specialty and topic inputs, handling aliases and applying default filters when needed.
+## Features Implemented
 
-Query Construction: Builds optimized PubMed search queries using MeSH terms, filters, and date ranges.
+### Core Features
 
-PubMed API Integration: Interacts with PubMed's E-utilities API with proper rate limiting and pagination.
+- **Blueprint Processing**: Normalizes and validates specialty and topic inputs, handling aliases and applying default filters when needed.
+- **Query Construction**: Builds optimized PubMed search queries using MeSH terms, filters, and date ranges.
+- **PubMed API Integration**: Interacts with PubMed's E-utilities API with proper rate limiting and pagination.
+- **Article Ranking**: Scores articles based on relevance to the search topics and journal quality metrics.
 
-Article Ranking: Scores articles based on relevance to the search topics and journal quality metrics.
+### RESTful API
 
-RESTful API:
+- **POST /api/articles**: Retrieve articles based on specialty and topics
+- **GET /api/specialties**: Get all available specialties
+- **GET /api/specialties/:specialty/topics**: Get suggested topics for a specialty
 
-POST /api/articles - Retrieve articles based on specialty and topics
-GET /api/specialties - Get all available specialties
-GET /api/specialties/:specialty/topics - Get suggested topics for a specialty
-Running the Application
+### Type-Safe Implementation
 
+- Full TypeScript implementation with strongly typed interfaces for all requests and responses
+- Type definitions available for:
+  - `ArticleRequest`: Blueprint parameters with optional filters
+  - `ArticleResponse`: Article results with metadata
+  - `Article`: Comprehensive article data structure
+  - Supporting types for the E-utilities service
+
+## Running the Application
+
+```bash
 # Build the TypeScript code
-
 npm run build
 
 # Start the server
-
 npm start
 
 # Start with auto-reload for development
-
 npm run dev
+```
+
 The server will be available at http://localhost:3000 with complete API documentation at the root endpoint.
 
-Example API Request
+### Example API Request
+
+```http
 POST /api/articles
+Content-Type: application/json
+
 {
-"specialty": "cardiology",
-"topics": ["heart failure", "hypertension"],
-"filters": {
-"clinical_queries": ["Therapy", "Diagnosis"],
-"year_range": 5
-},
-"page": 1,
-"limit": 10
+  "specialty": "cardiology",
+  "topics": ["heart failure", "hypertension"],
+  "filters": {
+    "clinical_queries": ["Therapy", "Diagnosis"],
+    "year_range": 2
+  },
+  "page": 1,
+  "limit": 10
 }
+```
+
 This will return ranked articles related to heart failure and hypertension from high-quality cardiology journals, published within the last 5 years.
 
 ## License
