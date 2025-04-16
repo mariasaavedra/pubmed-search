@@ -1,3 +1,5 @@
+import { CLINICALLY_USEFUL_JOURNALS, CARDIOLOGY_JOURNALS, createJournalFilter } from '../data/journals';
+
 export const PUBMED_CONFIG = {
   // PubMed API
   // https://www.ncbi.nlm.nih.gov/books/NBK25501/
@@ -23,17 +25,6 @@ export const PUBMED_CONFIG = {
 } as const;
 
 /**
- * Core Clinical Journals filter (AIM = Abridged Index Medicus)
- * 
- * This filter restricts search results to approximately 120 core clinical journals
- * curated by the National Library of Medicine for their clinical relevance and quality.
- * 
- * This filter is always applied to all search queries to ensure high-quality, clinically
- * relevant results.
- * 
- * Learn more: https://www.nlm.nih.gov/bsd/aim.html
- */
-/**
  * Clinically Useful Journals (CUJ) filter - Updated 2023
  * 
  * This filter restricts search results to 241 journals identified as having high clinical utility
@@ -44,7 +35,7 @@ export const PUBMED_CONFIG = {
  * 
  * The full list of journals is available in data/clinically-useful-journals.json
  */
-export const CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]"; // TODO: Replace with CUJ journals query
+export const CORE_CLINICAL_JOURNALS_FILTER = createJournalFilter(CLINICALLY_USEFUL_JOURNALS);
 
 /**
  * Cardiology Journals filter
@@ -54,7 +45,7 @@ export const CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]"; // TODO
  * 
  * The full list of journals is available in data/cardiology-journals.json
  */
-export const CARDIOLOGY_JOURNALS_FILTER = "(\"JAMA Cardiol\"[Journal] OR \"Circulation\"[Journal] OR \"Eur Heart J\"[Journal] OR \"J Am Coll Cardiol\"[Journal] OR \"Heart\"[Journal])";
+export const CARDIOLOGY_JOURNALS_FILTER = createJournalFilter(CARDIOLOGY_JOURNALS);
 
 export const AGE_MAP = {
   "Newborn: Birth-1 month": "infant, newborn[mh]",
@@ -99,7 +90,7 @@ export const DEFAULT_FILTER = {
   Clinical Trial[pt] OR Controlled Clinical Trial[pt] OR Meta-Analysis[pt]
   OR Multicenter Study[pt] OR Observational Study[pt] OR Practice Guideline[pt]
   OR Randomized Controlled Trial[pt] OR Review[pt] OR Systematic Review[pt]
-) AND English[Language]`,
+) AND English[Language] AND humans[mh] AND full text[sb]`,
   
   broad: `((clinical[Title/Abstract] AND trial[Title/Abstract]) OR clinical trials as topic[MeSH Terms] OR clinical trial[Publication Type] OR random*[Title/Abstract] OR random allocation[MeSH Terms] OR therapeutic use[MeSH Subheading]) AND English[Language]`
 } as const;

@@ -356,8 +356,8 @@
               const journal = document.createElement("p");
               journal.className = "journal-info";
               journal.textContent = `${article.journal}${
-                article.publication_date
-                  ? " • " + formatDate(article.publication_date)
+                article.pub_date
+                  ? " • " + formatDate(article.pub_date)
                   : ""
               }`;
               articleElement.appendChild(journal);

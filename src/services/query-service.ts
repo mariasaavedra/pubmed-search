@@ -59,6 +59,7 @@ class QueryService {
 
   /**
    * Create a basic search term by handling specialty and topics simply
+   * Leverages PubMed's Automatic Term Mapping for better recall
    * @param blueprint Processed blueprint
    * @returns Formatted search term string
    */
@@ -81,19 +82,9 @@ class QueryService {
       );
     }
 
-    // Format terms in a basic but reliable way
-    const formattedTerms = terms.map(term => {
-      if (term.includes(" ")) {
-        // For multi-word terms, use quotes to treat as phrases
-        return `"${term}"`;
-      } else {
-        // Single word terms
-        return term;
-      }
-    });
-
-    // Join with OR
-    return formattedTerms.join(" OR ");
+    // Join terms with OR, allowing PubMed's Automatic Term Mapping to expand them
+    // This provides better recall by mapping to MeSH terms and their hierarchies
+    return terms.join(" OR ");
   }
 
   /**
