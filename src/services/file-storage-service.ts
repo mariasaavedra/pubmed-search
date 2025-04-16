@@ -43,7 +43,15 @@ class FileStorageService {
           authors: article.authors,
           journal: article.journal,
           year: new Date(article.pub_date).getFullYear(),
-          mesh_terms: [] // To be populated if/when MeSH terms are available
+          mesh_terms: [], // To be populated if/when MeSH terms are available
+          full_text: article.full_text,
+          methods: article.methods,
+          results: article.results,
+          discussion: article.discussion,
+          conclusion: article.conclusion,
+          figures: article.figures,
+          tables: article.tables,
+          supplementary_material: article.supplementary_material
         }))
       };
 

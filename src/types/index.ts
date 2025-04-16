@@ -19,6 +19,16 @@ export interface SavedSearchResult {
 export interface SavedArticle extends Omit<Article, 'scores' | 'url' | 'pub_date'> {
   year: number;
   mesh_terms: string[];
+  full_text?: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures?: string[];
+  tables?: string[];
+  supplementary_material?: string[];
+  original_xml?: string;
+  sanitized_html?: string;
 }
 
 // Request type definitions
@@ -56,6 +66,16 @@ export interface Article {
     relevance: number;
     journal_impact: number;
   };
+  full_text?: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures?: string[];
+  tables?: string[];
+  supplementary_material?: string[];
+  original_xml?: string;
+  sanitized_html?: string;
 }
 
 // PubMed API response types
@@ -175,6 +195,19 @@ export interface JournalMetrics {
   sjr_score?: number;
 }
 
+export interface ContentExtractionResult {
+  full_text: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures: string[];
+  tables: string[];
+  supplementary_material: string[];
+  original_xml?: string;
+  sanitized_html?: string;
+}
+
 export interface ParsedArticleData {
   pmid: string;
   title: string;
@@ -191,6 +224,8 @@ export interface ParsedArticleData {
   figures?: string[];
   tables?: string[];
   supplementary_material?: string[];
+  original_xml?: string;
+  sanitized_html?: string;
 }
 
 export interface RankedArticleData extends ParsedArticleData {

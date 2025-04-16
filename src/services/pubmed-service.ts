@@ -175,11 +175,14 @@ class PubmedService {
         `API request for article details completed in ${duration}ms`
       );
 
+      // Store original XML
+      const original_xml = response.data;
+
       // Parse XML response
-      const xml_data = await this.ParseXml(response.data);
+      const xml_data = await this.ParseXml(original_xml);
 
       // Extract article data
-      const articles = await this.ExtractArticleData(xml_data);
+      const articles = await this.ExtractArticleData(xml_data, original_xml);
       Logger.debug(
         "PubmedService",
         `Successfully extracted ${articles.length} article details`
@@ -222,7 +225,10 @@ class PubmedService {
    * @param data PubMed response data
    * @returns Array of parsed article data
    */
-  private async ExtractArticleData(data: PubmedFetchResponse): Promise<ParsedArticleData[]> {
+  private async ExtractArticleData(
+    data: PubmedFetchResponse,
+    original_xml: string
+  ): Promise<ParsedArticleData[]> {
     if (!data.PubmedArticleSet || !data.PubmedArticleSet.PubmedArticle) {
       return [];
     }
@@ -305,8 +311,8 @@ class PubmedService {
       };
 
       try {
-        // Extract full content
-        const content = await this.content_service.extractContentFromPubMed(pmid);
+        // Extract full content with original XML
+        const content = await this.content_service.extractContentFromPubMed(pmid, original_xml);
         
         const details = {
           ...baseArticle,
