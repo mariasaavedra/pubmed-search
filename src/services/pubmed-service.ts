@@ -1,15 +1,15 @@
-import axios, { AxiosResponse } from 'axios';
-import { parseStringPromise } from 'xml2js';
-import dotenv from 'dotenv';
-import { PUBMED_CONFIG } from '../config/pubmed-config';
-import RateLimiter from '../utils/rate-limiter';
-import { 
-  PubmedSearchResponse, 
+import axios, { AxiosResponse } from "axios";
+import { parseStringPromise } from "xml2js";
+import dotenv from "dotenv";
+import { PUBMED_CONFIG } from "../config/pubmed-config";
+import RateLimiter from "../utils/rate-limiter";
+import {
+  PubmedSearchResponse,
   PubmedSummaryResponse,
   PubmedFetchResponse,
-  ParsedArticleData
-} from '../types';
-import { Logger } from '../utils/logger';
+  ParsedArticleData,
+} from "../types";
+import { Logger } from "../utils/logger";
 
 // Load environment variables
 dotenv.config();
@@ -25,20 +25,20 @@ class PubmedService {
   constructor() {
     this.base_url = PUBMED_CONFIG.base_url;
     this.api_key = process.env.PUBMED_API_KEY;
-    
+
     // Initialize rate limiter based on config
     this.rate_limiter = new RateLimiter(
       PUBMED_CONFIG.rate_limit.max_concurrent,
       PUBMED_CONFIG.rate_limit.min_time
     );
-    
-    Logger.debug('PubmedService', 'Initialized with configuration', {
+
+    Logger.debug("PubmedService", "Initialized with configuration", {
       base_url: this.base_url,
       api_key_present: !!this.api_key,
       rate_limit: {
         max_concurrent: PUBMED_CONFIG.rate_limit.max_concurrent,
-        min_time: PUBMED_CONFIG.rate_limit.min_time
-      }
+        min_time: PUBMED_CONFIG.rate_limit.min_time,
+      },
     });
   }
 
@@ -50,65 +50,71 @@ class PubmedService {
    * @returns Search results with PMIDs
    */
   public async SearchArticles(
-    query: string, 
-    page: number = 1, 
+    query: string,
+    page: number = 1,
     limit: number = PUBMED_CONFIG.page_size
   ): Promise<string[]> {
-    Logger.debug('PubmedService', `Searching articles with query, page=${page}, limit=${limit}`);
-    
+    Logger.debug(
+      "PubmedService",
+      `Searching articles with query, page=${page}, limit=${limit}`
+    );
+
     // Wait for rate limiting slot
     await this.rate_limiter.WaitForSlot();
-    Logger.debug('PubmedService', 'Rate limit slot acquired');
+    Logger.debug("PubmedService", "Rate limit slot acquired");
 
     try {
       // Construct search URL
       const search_url = `${this.base_url}${PUBMED_CONFIG.esearch}`;
       const retmax = Math.min(Math.max(1, limit), 100); // Between 1-100
       const retstart = (Math.max(1, page) - 1) * retmax;
-      
-      Logger.debug('PubmedService', `Making API request to ${search_url}`, {
+
+      Logger.debug("PubmedService", `Making API request to ${search_url}`, {
         parameters: {
-          db: 'pubmed',
+          db: "pubmed",
           term: query,
-          retmode: 'json',
+          retmode: "json",
           retmax,
           retstart,
-          api_key_present: !!this.api_key
-        }
+          api_key_present: !!this.api_key,
+        },
       });
 
       // Make the API request
       const start_time = Date.now();
       const response = await axios.get(search_url, {
         params: {
-          db: 'pubmed',
+          db: "pubmed",
           term: query,
-          retmode: 'json',
+          retmode: "json",
           retmax: retmax,
           retstart: retstart,
-          api_key: this.api_key
-        }
+          api_key: this.api_key,
+        },
       });
       const duration = Date.now() - start_time;
-      
-      Logger.debug('PubmedService', `API request completed in ${duration}ms`);
+
+      Logger.debug("PubmedService", `API request completed in ${duration}ms`);
 
       // Parse the response
       const search_results: PubmedSearchResponse = response.data;
-      
+
       // Check if we have valid results
-      if (!search_results.esearchresult || !search_results.esearchresult.idlist) {
-        Logger.warn('PubmedService', 'No results found in search response');
+      if (
+        !search_results.esearchresult ||
+        !search_results.esearchresult.idlist
+      ) {
+        Logger.warn("PubmedService", "No results found in search response");
         return [];
       }
 
       const ids = search_results.esearchresult.idlist;
-      Logger.debug('PubmedService', `Found ${ids.length} article IDs`);
-      
+      Logger.debug("PubmedService", `Found ${ids.length} article IDs`);
+
       return ids;
     } catch (error) {
-      Logger.error('PubmedService', 'Error searching PubMed', error);
-      throw new Error('Failed to search articles on PubMed');
+      Logger.error("PubmedService", "Error searching PubMed", error);
+      throw new Error("Failed to search articles on PubMed");
     }
   }
 
@@ -117,56 +123,67 @@ class PubmedService {
    * @param pmids Array of PubMed IDs
    * @returns Array of article details
    */
-  public async FetchArticleDetails(pmids: string[]): Promise<ParsedArticleData[]> {
+  public async FetchArticleDetails(
+    pmids: string[]
+  ): Promise<ParsedArticleData[]> {
     if (pmids.length === 0) {
-      Logger.debug('PubmedService', 'No PMIDs provided, returning empty array');
+      Logger.debug("PubmedService", "No PMIDs provided, returning empty array");
       return [];
     }
 
-    Logger.debug('PubmedService', `Fetching details for ${pmids.length} articles`);
-    
+    Logger.debug(
+      "PubmedService",
+      `Fetching details for ${pmids.length} articles`
+    );
+
     // Wait for rate limiting slot
     await this.rate_limiter.WaitForSlot();
-    Logger.debug('PubmedService', 'Rate limit slot acquired for fetch details');
+    Logger.debug("PubmedService", "Rate limit slot acquired for fetch details");
 
     try {
       // Construct fetch URL
       const fetch_url = `${this.base_url}${PUBMED_CONFIG.efetch}`;
-      
-      Logger.debug('PubmedService', `Making API request to ${fetch_url}`, {
+
+      Logger.debug("PubmedService", `Making API request to ${fetch_url}`, {
         parameters: {
-          db: 'pubmed',
+          db: "pubmed",
           id_count: pmids.length,
-          retmode: 'xml',
-          api_key_present: !!this.api_key
-        }
+          retmode: "xml",
+          api_key_present: !!this.api_key,
+        },
       });
 
       // Make the API request
       const start_time = Date.now();
       const response = await axios.get(fetch_url, {
         params: {
-          db: 'pubmed',
-          id: pmids.join(','),
-          retmode: 'xml',
-          api_key: this.api_key
-        }
+          db: "pubmed",
+          id: pmids.join(","),
+          retmode: "xml",
+          api_key: this.api_key,
+        },
       });
       const duration = Date.now() - start_time;
-      
-      Logger.debug('PubmedService', `API request for article details completed in ${duration}ms`);
+
+      Logger.debug(
+        "PubmedService",
+        `API request for article details completed in ${duration}ms`
+      );
 
       // Parse XML response
       const xml_data = await this.ParseXml(response.data);
-      
+
       // Extract article data
       const articles = this.ExtractArticleData(xml_data);
-      Logger.debug('PubmedService', `Successfully extracted ${articles.length} article details`);
-      
+      Logger.debug(
+        "PubmedService",
+        `Successfully extracted ${articles.length} article details`
+      );
+
       return articles;
     } catch (error) {
-      Logger.error('PubmedService', 'Error fetching article details', error);
-      throw new Error('Failed to fetch article details from PubMed');
+      Logger.error("PubmedService", "Error fetching article details", error);
+      throw new Error("Failed to fetch article details from PubMed");
     }
   }
 
@@ -176,22 +193,22 @@ class PubmedService {
    * @returns Parsed XML object
    */
   private async ParseXml(xml: string): Promise<PubmedFetchResponse> {
-    Logger.debug('PubmedService', 'Parsing XML response');
+    Logger.debug("PubmedService", "Parsing XML response");
     const start_time = Date.now();
-    
+
     try {
       const result = await parseStringPromise(xml, {
         explicitArray: false,
-        ignoreAttrs: true
+        ignoreAttrs: true,
       });
-      
+
       const duration = Date.now() - start_time;
-      Logger.debug('PubmedService', `XML parsing completed in ${duration}ms`);
-      
+      Logger.debug("PubmedService", `XML parsing completed in ${duration}ms`);
+
       return result;
     } catch (error) {
-      Logger.error('PubmedService', 'Error parsing XML', error);
-      throw new Error('Failed to parse PubMed response');
+      Logger.error("PubmedService", "Error parsing XML", error);
+      throw new Error("Failed to parse PubMed response");
     }
   }
 
@@ -210,22 +227,22 @@ class PubmedService {
       ? data.PubmedArticleSet.PubmedArticle
       : [data.PubmedArticleSet.PubmedArticle];
 
-    return articles.map(article => {
+    return articles.map((article) => {
       const citation = article.MedlineCitation;
       const article_data = citation.Article;
       const pmid = citation.PMID;
 
       // Extract abstract
-      let abstract = '';
+      let abstract = "";
       if (article_data.Abstract && article_data.Abstract.AbstractText) {
-        if (typeof article_data.Abstract.AbstractText === 'string') {
+        if (typeof article_data.Abstract.AbstractText === "string") {
           abstract = article_data.Abstract.AbstractText;
         } else if (Array.isArray(article_data.Abstract.AbstractText)) {
-          abstract = article_data.Abstract.AbstractText
-            .map((section: any) => section._ || section)
-            .join(' ');
-        } else if (typeof article_data.Abstract.AbstractText === 'object') {
-          abstract = (article_data.Abstract.AbstractText as any)._ || '';
+          abstract = article_data.Abstract.AbstractText.map(
+            (section: any) => section._ || section
+          ).join(" ");
+        } else if (typeof article_data.Abstract.AbstractText === "object") {
+          abstract = (article_data.Abstract.AbstractText as any)._ || "";
         }
       }
 
@@ -236,28 +253,35 @@ class PubmedService {
           ? article_data.AuthorList.Author
           : [article_data.AuthorList.Author];
 
-        authors = author_list.map((author: any) => {
-          if (author.LastName && author.Initials) {
-            return `${author.LastName} ${author.Initials}`;
-          }
-          if (author.LastName) {
-            return author.LastName;
-          }
-          if (author.CollectiveName) {
-            return author.CollectiveName;
-          }
-          return '';
-        }).filter((a: string) => a);
+        authors = author_list
+          .map((author: any) => {
+            if (author.LastName && author.Initials) {
+              return `${author.LastName} ${author.Initials}`;
+            }
+            if (author.LastName) {
+              return author.LastName;
+            }
+            if (author.CollectiveName) {
+              return author.CollectiveName;
+            }
+            return "";
+          })
+          .filter((a: string) => a);
       }
 
       // Extract publication date
-      let pub_date = '';
-      if (article_data.Journal && article_data.Journal.JournalIssue && article_data.Journal.JournalIssue.PubDate) {
+      let pub_date = "";
+      if (
+        article_data.Journal &&
+        article_data.Journal.JournalIssue &&
+        article_data.Journal.JournalIssue.PubDate
+      ) {
         const date = article_data.Journal.JournalIssue.PubDate;
         if (date.Year) {
-          pub_date = date.Month && date.Day
-            ? `${date.Year}-${date.Month}-${date.Day}`
-            : date.Month
+          pub_date =
+            date.Month && date.Day
+              ? `${date.Year}-${date.Month}-${date.Day}`
+              : date.Month
               ? `${date.Year}-${date.Month}`
               : date.Year;
         } else if (date.MedlineDate) {
@@ -267,12 +291,12 @@ class PubmedService {
 
       return {
         pmid,
-        title: article_data.ArticleTitle || '',
+        title: article_data.ArticleTitle || "",
         authors,
-        journal: article_data.Journal?.Title || '',
+        journal: article_data.Journal?.Title || "",
         pub_date,
         abstract,
-        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`
+        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
       };
     });
   }
@@ -283,47 +307,47 @@ class PubmedService {
    * @returns Count of matching articles
    */
   public async GetArticleCount(query: string): Promise<number> {
-    Logger.debug('PubmedService', 'Getting article count for query');
-    
+    Logger.debug("PubmedService", "Getting article count for query");
+
     // Wait for rate limiting slot
     await this.rate_limiter.WaitForSlot();
-    Logger.debug('PubmedService', 'Rate limit slot acquired for article count');
+    Logger.debug("PubmedService", "Rate limit slot acquired for article count");
 
     try {
       // Construct search URL
       const search_url = `${this.base_url}${PUBMED_CONFIG.esearch}`;
-      
-      Logger.debug('PubmedService', `Making count request to ${search_url}`);
+
+      Logger.debug("PubmedService", `Making count request to ${search_url}`);
 
       // Make the API request
       const start_time = Date.now();
       const response = await axios.get(search_url, {
         params: {
-          db: 'pubmed',
+          db: "pubmed",
           term: query,
-          retmode: 'json',
+          retmode: "json",
           retmax: 0,
-          api_key: this.api_key
-        }
+          api_key: this.api_key,
+        },
       });
       const duration = Date.now() - start_time;
-      
-      Logger.debug('PubmedService', `Count request completed in ${duration}ms`);
+
+      Logger.debug("PubmedService", `Count request completed in ${duration}ms`);
 
       // Parse the response
       const search_results: PubmedSearchResponse = response.data;
-      
+
       if (search_results.esearchresult && search_results.esearchresult.count) {
         const count = parseInt(search_results.esearchresult.count, 10);
-        Logger.debug('PubmedService', `Found ${count} total matching articles`);
+        Logger.debug("PubmedService", `Found ${count} total matching articles`);
         return count;
       }
-      
-      Logger.warn('PubmedService', 'No count information in search response');
+
+      Logger.warn("PubmedService", "No count information in search response");
       return 0;
     } catch (error) {
-      Logger.error('PubmedService', 'Error getting article count', error);
-      throw new Error('Failed to get article count from PubMed');
+      Logger.error("PubmedService", "Error getting article count", error);
+      throw new Error("Failed to get article count from PubMed");
     }
   }
 }
