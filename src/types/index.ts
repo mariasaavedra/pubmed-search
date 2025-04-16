@@ -1,12 +1,12 @@
 // Type definitions for the PubMed Search API
-import { FILTER_MAP } from '../config/pubmed-config';
+import { FILTER_MAP } from "../config/pubmed-config";
 
 /**
  * Metadata about field encoding
  */
 export interface EncodingMetadata {
   field_name: string;
-  encoding: 'base64' | 'none';
+  encoding: "base64" | "none";
 }
 
 // Utility types for configuration
@@ -21,27 +21,12 @@ export interface SavedSearchResult {
   article_count: number;
   clinical_specialty: string;
   pmids: string[];
-  articles: SavedArticle[];
+  articles: Article[];
   encoding_metadata?: {
-    tables: 'base64';
-    original_xml: 'base64';
-    sanitized_html: 'base64';
+    tables: "base64";
+    original_xml: "base64";
+    sanitized_html: "base64";
   };
-}
-
-export interface SavedArticle extends Omit<Article, 'scores' | 'url' | 'pub_date'> {
-  year: number;
-  mesh_terms: string[];
-  full_text?: string;
-  methods?: string;
-  results?: string;
-  discussion?: string;
-  conclusion?: string;
-  figures?: string[];
-  tables?: string[];
-  supplementary_material?: string[];
-  original_xml?: string;
-  sanitized_html?: string;
 }
 
 // Request type definitions
@@ -65,9 +50,9 @@ export interface ArticleResponse {
     processing_time: number;
     saved_filename: string;
     encoding?: {
-      tables: 'base64';
-      original_xml: 'base64';
-      sanitized_html: 'base64';
+      tables: "base64";
+      original_xml: "base64";
+      sanitized_html: "base64";
     };
   };
 }
@@ -152,117 +137,6 @@ export interface PubmedSummaryResponse {
   };
 }
 
-export interface PubmedFetchResponse {
-  PubmedArticleSet: {
-    PubmedArticle: Array<{
-      MedlineCitation: {
-        PMID: string;
-        MeshHeadingList?: {
-          MeshHeading: Array<{
-            DescriptorName: string | {
-              _: string;
-              UI: string;
-            };
-            QualifierName?: Array<{
-              _: string;
-              UI: string;
-            }> | {
-              _: string;
-              UI: string;
-            };
-          }> | {
-            DescriptorName: string | {
-              _: string;
-              UI: string;
-            };
-            QualifierName?: Array<{
-              _: string;
-              UI: string;
-            }> | {
-              _: string;
-              UI: string;
-            };
-          };
-        };
-        ChemicalList?: {
-          Chemical: Array<{
-            NameOfSubstance: string | {
-              _: string;
-              UI: string;
-            };
-            RegistryNumber: string;
-          }> | {
-            NameOfSubstance: string | {
-              _: string;
-              UI: string;
-            };
-            RegistryNumber: string;
-          };
-        };
-        Article: {
-          ArticleTitle: string;
-          Abstract?: {
-            AbstractText: string | Array<{
-              _: string;
-              Label?: string;
-              NlmCategory?: string;
-            }> | {
-              _: string;
-              Label?: string;
-              NlmCategory?: string;
-            };
-          };
-          AuthorList?: {
-            Author: Array<{
-              LastName?: string;
-              ForeName?: string;
-              Initials?: string;
-              CollectiveName?: string;
-              AffiliationInfo?: Array<{
-                Affiliation: string;
-              }> | {
-                Affiliation: string;
-              };
-            }> | {
-              LastName?: string;
-              ForeName?: string;
-              Initials?: string;
-              CollectiveName?: string;
-              AffiliationInfo?: Array<{
-                Affiliation: string;
-              }> | {
-                Affiliation: string;
-              };
-            };
-          };
-          PublicationTypeList?: {
-            PublicationType: Array<{
-              _: string;
-              UI: string;
-            }> | {
-              _: string;
-              UI: string;
-            };
-          };
-          Journal: {
-            Title: string;
-            JournalIssue: {
-              Volume?: string;
-              Issue?: string;
-              PubDate: {
-                Year?: string;
-                Month?: string;
-                Day?: string;
-                MedlineDate?: string;
-              };
-            };
-          };
-        };
-      };
-    }>;
-  };
-}
-
 // Internal processing types
 export interface ProcessedBlueprint {
   specialty: string;
@@ -281,41 +155,7 @@ export interface JournalMetrics {
   sjr_score?: number;
 }
 
-export interface ContentExtractionResult {
-  full_text: string;
-  methods?: string;
-  results?: string;
-  discussion?: string;
-  conclusion?: string;
-  figures: string[];
-  tables: string[];
-  supplementary_material: string[];
-  original_xml?: string;
-  sanitized_html?: string;
-}
-
-export interface ParsedArticleData {
-  pmid: string;
-  title: string;
-  authors: string[];
-  journal: string;
-  pub_date: string;
-  abstract: string;
-  url: string;
-  full_text?: string;
-  methods?: string;
-  results?: string;
-  discussion?: string;
-  conclusion?: string;
-  figures?: string[];
-  tables?: string[];
-  supplementary_material?: string[];
-  original_xml?: string;
-  sanitized_html?: string;
-  mesh_terms?: string[];
-}
-
-export interface RankedArticleData extends ParsedArticleData {
+export interface RankedArticleData extends Article {
   scores: {
     relevance: number;
     journal_impact: number;

@@ -73,7 +73,7 @@ class ArticleController {
             logger_1.Logger.debug('ArticleController', 'Articles ranked successfully');
             const duration = Date.now() - start_time;
             // Save search results
-            const saved_filename = await this.file_storage_service.saveSearchResult(ranked_articles, blueprint, query, pmids, total_count);
+            const saved_filename = await this.file_storage_service.saveSearchResult(ranked_articles, blueprint, query + '-ranked', pmids, total_count);
             logger_1.Logger.info('ArticleController', `Search results saved to ${saved_filename}`);
             // Return results
             logger_1.Logger.success('ArticleController', `Request completed in ${duration}ms, returning ${ranked_articles.length} articles`);

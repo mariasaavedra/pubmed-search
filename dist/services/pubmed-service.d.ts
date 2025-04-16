@@ -31,9 +31,16 @@ declare class PubmedService {
     /**
      * Extract article data from PubMed response
      * @param data PubMed response data
+     * @param original_xml Original XML response for preservation
      * @returns Array of parsed article data
      */
     private ExtractArticleData;
+    /**
+     * Helper method to safely extract text from XML elements
+     * @param element XML element that might be string, object with _ property, or array of such objects
+     * @returns Extracted text or empty string
+     */
+    private extractTextFromElement;
     /**
      * Get the count of articles matching a query
      * @param query PubMed search query

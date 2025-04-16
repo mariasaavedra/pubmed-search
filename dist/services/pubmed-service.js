@@ -150,9 +150,15 @@ class PubmedService {
         logger_1.Logger.debug("PubmedService", "Parsing XML response");
         const start_time = Date.now();
         try {
+            // Use enhanced XML parsing options to preserve structure and attributes
             const result = await (0, xml2js_1.parseStringPromise)(xml, {
-                explicitArray: false,
-                ignoreAttrs: true,
+                explicitArray: true, // Ensure all elements are arrays for consistency
+                mergeAttrs: false, // Keep attributes separate
+                explicitRoot: true, // Keep the root element
+                normalizeTags: false, // Don't normalize tag names
+                attrkey: '@', // Prefix attributes with @
+                charkey: '_', // Use _ for element content
+                trim: true // Trim whitespace
             });
             const duration = Date.now() - start_time;
             logger_1.Logger.debug("PubmedService", `XML parsing completed in ${duration}ms`);
@@ -166,107 +172,226 @@ class PubmedService {
     /**
      * Extract article data from PubMed response
      * @param data PubMed response data
+     * @param original_xml Original XML response for preservation
      * @returns Array of parsed article data
      */
     async ExtractArticleData(data, original_xml) {
-        if (!data.PubmedArticleSet || !data.PubmedArticleSet.PubmedArticle) {
-            return [];
+        try {
+            if (!data.PubmedArticleSet || !data.PubmedArticleSet.PubmedArticle || !data.PubmedArticleSet.PubmedArticle.length) {
+                logger_1.Logger.warn("PubmedService", "No articles found in PubMed response");
+                return [];
+            }
+            logger_1.Logger.debug("PubmedService", `${data.PubmedArticleSet.PubmedArticle.length} articles found in XML data`);
+            const articles = data.PubmedArticleSet.PubmedArticle;
+            return Promise.all(articles.map(async (pubmedArticle) => {
+                try {
+                    // Extract basic citation data
+                    const citation = pubmedArticle.MedlineCitation?.[0] || {};
+                    const pmid = this.extractTextFromElement(citation.PMID);
+                    logger_1.Logger.debug("PubmedService", `Processing article with PMID ${pmid}`);
+                    // Extract article data - handle safely with optional chaining
+                    const articleData = citation.Article?.[0] || {};
+                    // Extract title
+                    const title = this.extractTextFromElement(articleData.ArticleTitle);
+                    // Extract journal info
+                    const journalData = articleData.Journal?.[0] || {};
+                    const journal = this.extractTextFromElement(journalData.Title);
+                    // Extract publication date
+                    let pubDate = "";
+                    const journalIssue = journalData.JournalIssue?.[0] || {};
+                    const pubDateData = journalIssue.PubDate?.[0] || {};
+                    const year = this.extractTextFromElement(pubDateData.Year);
+                    const month = this.extractTextFromElement(pubDateData.Month);
+                    const day = this.extractTextFromElement(pubDateData.Day);
+                    const medlineDate = this.extractTextFromElement(pubDateData.MedlineDate);
+                    if (year) {
+                        pubDate = month && day
+                            ? `${year}-${month}-${day}`
+                            : month
+                                ? `${year}-${month}`
+                                : year;
+                    }
+                    else if (medlineDate) {
+                        pubDate = medlineDate;
+                    }
+                    // Extract abstract and section-specific content
+                    const abstractData = articleData.Abstract?.[0] || {};
+                    const abstractTextElements = abstractData.AbstractText || [];
+                    let fullAbstract = "";
+                    let methodsText = "";
+                    let resultsText = "";
+                    let discussionText = "";
+                    let conclusionText = "";
+                    // Process abstract sections
+                    if (abstractTextElements.length > 0) {
+                        // Multiple abstract sections with labels
+                        abstractTextElements.forEach((section) => {
+                            const sectionText = this.extractTextFromElement(section);
+                            if (!sectionText)
+                                return;
+                            // Add to full abstract
+                            fullAbstract += sectionText + " ";
+                            // Check for section labels
+                            const nlmCategory = section['@'] ?
+                                (section['@'].NlmCategory || section['@'].Label || "").toLowerCase() : "";
+                            if (nlmCategory.includes("methods") || nlmCategory.includes("materials")) {
+                                methodsText = sectionText;
+                            }
+                            else if (nlmCategory.includes("results") || nlmCategory.includes("findings")) {
+                                resultsText = sectionText;
+                            }
+                            else if (nlmCategory.includes("discussion") || nlmCategory.includes("interpretation")) {
+                                discussionText = sectionText;
+                            }
+                            else if (nlmCategory.includes("conclusion") || nlmCategory.includes("summary")) {
+                                conclusionText = sectionText;
+                            }
+                        });
+                    }
+                    else if (typeof abstractData.AbstractText === 'string') {
+                        // Simple string abstract
+                        fullAbstract = abstractData.AbstractText;
+                    }
+                    // Extract author list
+                    const authors = [];
+                    const authorListData = articleData.AuthorList?.[0] || {};
+                    const authorElements = authorListData.Author || [];
+                    authorElements.forEach((author) => {
+                        const lastName = this.extractTextFromElement(author.LastName);
+                        const initials = this.extractTextFromElement(author.Initials);
+                        const collectiveName = this.extractTextFromElement(author.CollectiveName);
+                        if (lastName && initials) {
+                            authors.push(`${lastName} ${initials}`);
+                        }
+                        else if (lastName) {
+                            authors.push(lastName);
+                        }
+                        else if (collectiveName) {
+                            authors.push(collectiveName);
+                        }
+                    });
+                    // Extract MeSH terms
+                    const meshTerms = [];
+                    const meshHeadingList = citation.MeshHeadingList?.[0] || {};
+                    const meshHeadings = meshHeadingList.MeshHeading || [];
+                    meshHeadings.forEach((mesh) => {
+                        // Extract descriptor name
+                        const descriptorElement = mesh.DescriptorName?.[0];
+                        if (descriptorElement) {
+                            const term = this.extractTextFromElement(descriptorElement);
+                            if (term) {
+                                meshTerms.push(term);
+                            }
+                        }
+                        // Extract qualifier names
+                        const qualifierElements = mesh.QualifierName || [];
+                        qualifierElements.forEach((qualifier) => {
+                            const term = this.extractTextFromElement(qualifier);
+                            if (term) {
+                                meshTerms.push(term);
+                            }
+                        });
+                    });
+                    logger_1.Logger.debug("PubmedService", `Extracted ${meshTerms.length} MeSH terms for PMID ${pmid}`);
+                    // Initial article data from XML
+                    const baseArticle = {
+                        pmid,
+                        title,
+                        abstract: fullAbstract.trim(),
+                        authors,
+                        journal,
+                        pub_date: pubDate,
+                        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
+                        methods: methodsText,
+                        results: resultsText,
+                        discussion: discussionText,
+                        conclusion: conclusionText,
+                        figures: [],
+                        tables: [],
+                        supplementary_material: [],
+                        original_xml: original_xml,
+                        mesh_terms: meshTerms,
+                    };
+                    try {
+                        // Try to enhance with web scraping content
+                        logger_1.Logger.debug("PubmedService", `Attempting to enhance content for PMID ${pmid} with web scraping`);
+                        const content = await this.content_service.extractContentFromPubMed(pmid, original_xml);
+                        // Merge with preference for scraped content
+                        const details = {
+                            ...baseArticle,
+                            full_text: content.full_text || fullAbstract.trim(),
+                            methods: content.methods || baseArticle.methods,
+                            results: content.results || baseArticle.results,
+                            discussion: content.discussion || baseArticle.discussion,
+                            conclusion: content.conclusion || baseArticle.conclusion,
+                            figures: content.figures,
+                            tables: content.tables,
+                            supplementary_material: content.supplementary_material,
+                            sanitized_html: content.sanitized_html
+                        };
+                        logger_1.Logger.debug("PubmedService", `Successfully enhanced content for PMID ${pmid}`);
+                        return details;
+                    }
+                    catch (error) {
+                        // Web scraping failed - use basic XML data
+                        logger_1.Logger.warn("PubmedService", `Web scraping failed for PMID ${pmid}, using XML extraction only`, error);
+                        return {
+                            ...baseArticle,
+                            full_text: fullAbstract.trim() || "No content available"
+                        };
+                    }
+                }
+                catch (articleError) {
+                    // Handle errors for individual articles
+                    const pmid = pubmedArticle.MedlineCitation?.[0]?.PMID?.[0]?._ || "Unknown";
+                    logger_1.Logger.error("PubmedService", `Error processing article with PMID ${pmid}`, articleError);
+                    // Return minimal article data to prevent complete failure
+                    return {
+                        pmid,
+                        title: pubmedArticle.MedlineCitation?.[0]?.Article?.[0]?.ArticleTitle?.[0]?._ || "Untitled Article",
+                        abstract: "Error processing article content",
+                        authors: [],
+                        journal: "",
+                        pub_date: "",
+                        url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
+                        full_text: "Error processing article content",
+                        mesh_terms: [],
+                        figures: [],
+                        tables: [],
+                        supplementary_material: []
+                    };
+                }
+            }));
         }
-        // Ensure articles is always an array
-        const articles = Array.isArray(data.PubmedArticleSet.PubmedArticle)
-            ? data.PubmedArticleSet.PubmedArticle
-            : [data.PubmedArticleSet.PubmedArticle];
-        return Promise.all(articles.map(async (article) => {
-            const citation = article.MedlineCitation;
-            const article_data = citation.Article;
-            const pmid = citation.PMID;
-            // Extract abstract
-            let abstract = "";
-            if (article_data.Abstract && article_data.Abstract.AbstractText) {
-                if (typeof article_data.Abstract.AbstractText === "string") {
-                    abstract = article_data.Abstract.AbstractText;
-                }
-                else if (Array.isArray(article_data.Abstract.AbstractText)) {
-                    abstract = article_data.Abstract.AbstractText.map((section) => section._ || section).join(" ");
-                }
-                else if (typeof article_data.Abstract.AbstractText === "object") {
-                    abstract = article_data.Abstract.AbstractText._ || "";
-                }
-            }
-            // Extract authors
-            let authors = [];
-            if (article_data.AuthorList && article_data.AuthorList.Author) {
-                const author_list = Array.isArray(article_data.AuthorList.Author)
-                    ? article_data.AuthorList.Author
-                    : [article_data.AuthorList.Author];
-                authors = author_list
-                    .map((author) => {
-                    if (author.LastName && author.Initials) {
-                        return `${author.LastName} ${author.Initials}`;
-                    }
-                    if (author.LastName) {
-                        return author.LastName;
-                    }
-                    if (author.CollectiveName) {
-                        return author.CollectiveName;
-                    }
-                    return "";
-                })
-                    .filter((a) => a);
-            }
-            // Extract publication date
-            let pub_date = "";
-            if (article_data.Journal &&
-                article_data.Journal.JournalIssue &&
-                article_data.Journal.JournalIssue.PubDate) {
-                const date = article_data.Journal.JournalIssue.PubDate;
-                if (date.Year) {
-                    pub_date =
-                        date.Month && date.Day
-                            ? `${date.Year}-${date.Month}-${date.Day}`
-                            : date.Month
-                                ? `${date.Year}-${date.Month}`
-                                : date.Year;
-                }
-                else if (date.MedlineDate) {
-                    pub_date = date.MedlineDate;
-                }
-            }
-            const baseArticle = {
-                pmid,
-                title: article_data.ArticleTitle || "",
-                authors,
-                journal: article_data.Journal?.Title || "",
-                pub_date,
-                abstract,
-                url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
-            };
-            try {
-                // Extract full content with original XML
-                const content = await this.content_service.extractContentFromPubMed(pmid, original_xml);
-                const details = {
-                    ...baseArticle,
-                    full_text: content.full_text,
-                    methods: content.methods,
-                    results: content.results,
-                    discussion: content.discussion,
-                    conclusion: content.conclusion,
-                    figures: content.figures,
-                    tables: content.tables,
-                    supplementary_material: content.supplementary_material,
-                    original_xml: content.original_xml,
-                    sanitized_html: content.sanitized_html,
-                };
-                logger_1.Logger.debug("PubmedService", `Successfully extracted content for PMID ${pmid}`, {
-                    details,
-                });
-                return details;
-            }
-            catch (error) {
-                logger_1.Logger.warn("PubmedService", `Failed to extract full content for PMID ${pmid}, returning basic metadata only`, error);
-                return baseArticle;
-            }
-        }));
+        catch (error) {
+            logger_1.Logger.error("PubmedService", "Critical error extracting article data", error);
+            throw new Error("Failed to extract article data from PubMed response");
+        }
+    }
+    /**
+     * Helper method to safely extract text from XML elements
+     * @param element XML element that might be string, object with _ property, or array of such objects
+     * @returns Extracted text or empty string
+     */
+    extractTextFromElement(element) {
+        if (!element) {
+            return '';
+        }
+        // Handle array
+        if (Array.isArray(element)) {
+            if (element.length === 0)
+                return '';
+            element = element[0];
+        }
+        // Handle object with text content
+        if (typeof element === 'object') {
+            return element._ || '';
+        }
+        // Handle string
+        if (typeof element === 'string') {
+            return element;
+        }
+        return '';
     }
     /**
      * Get the count of articles matching a query
