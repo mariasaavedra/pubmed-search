@@ -61,11 +61,27 @@ app.get("/", (req, res) => {
     },
     config: {
       rate_limit: {
-        requests_per_second: 1000 / PUBMED_CONFIG.rate_limit.min_time,
-        max_concurrent: PUBMED_CONFIG.rate_limit.max_concurrent,
+        with_api_key: {
+          requests_per_second: PUBMED_CONFIG.rate_limit.with_api_key.requests_per_second,
+          max_concurrent: PUBMED_CONFIG.rate_limit.with_api_key.max_concurrent,
+        },
+        without_api_key: {
+          requests_per_second: PUBMED_CONFIG.rate_limit.without_api_key.requests_per_second,
+          max_concurrent: PUBMED_CONFIG.rate_limit.without_api_key.max_concurrent,
+        },
+        current: process.env.PUBMED_API_KEY 
+          ? {
+              requests_per_second: PUBMED_CONFIG.rate_limit.with_api_key.requests_per_second,
+              max_concurrent: PUBMED_CONFIG.rate_limit.with_api_key.max_concurrent,
+            } 
+          : {
+              requests_per_second: PUBMED_CONFIG.rate_limit.without_api_key.requests_per_second,
+              max_concurrent: PUBMED_CONFIG.rate_limit.without_api_key.max_concurrent,
+            }
       },
       page_size: PUBMED_CONFIG.page_size,
       page_limit: PUBMED_CONFIG.page_limit,
+      api_key_present: !!process.env.PUBMED_API_KEY,
     },
   });
 });
@@ -100,12 +116,21 @@ app.listen(port as number, "0.0.0.0", () => {
   Logger.info("Server", `API documentation: http://${host}:${port}/`);
 
   // Log environment details
+  const hasApiKey = !!process.env.PUBMED_API_KEY;
   Logger.debug("Config", "Environment configuration loaded", {
     env: process.env.NODE_ENV || "development",
-    rate_limits: {
-      requests_per_second: 1000 / PUBMED_CONFIG.rate_limit.min_time,
-      max_concurrent: PUBMED_CONFIG.rate_limit.max_concurrent,
-    },
+    rate_limits: hasApiKey 
+      ? {
+          requests_per_second: PUBMED_CONFIG.rate_limit.with_api_key.requests_per_second,
+          max_concurrent: PUBMED_CONFIG.rate_limit.with_api_key.max_concurrent,
+          interval_ms: PUBMED_CONFIG.rate_limit.min_time_with_key
+        }
+      : {
+          requests_per_second: PUBMED_CONFIG.rate_limit.without_api_key.requests_per_second,
+          max_concurrent: PUBMED_CONFIG.rate_limit.without_api_key.max_concurrent,
+          interval_ms: PUBMED_CONFIG.rate_limit.min_time_without_key
+        },
+    api_key_configured: hasApiKey
   });
 });
 

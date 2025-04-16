@@ -46,19 +46,34 @@ export class EUtilitiesService {
     this.contactEmail = contactEmail;
     this.xmlParser = new XMLDOMParser();
 
+    // Determine rate limit parameters based on API key presence
+    const hasApiKey = !!this.apiKey;
+    const rateConfig = hasApiKey 
+      ? {
+          maxConcurrent: PUBMED_CONFIG.rate_limit.with_api_key.max_concurrent,
+          minTime: PUBMED_CONFIG.rate_limit.min_time_with_key
+        }
+      : {
+          maxConcurrent: PUBMED_CONFIG.rate_limit.without_api_key.max_concurrent,
+          minTime: PUBMED_CONFIG.rate_limit.min_time_without_key
+        };
+
     // Initialize rate limiter based on config
     this.rateLimiter = new RateLimiter(
-      PUBMED_CONFIG.rate_limit.max_concurrent,
-      PUBMED_CONFIG.rate_limit.min_time
+      rateConfig.maxConcurrent,
+      rateConfig.minTime
     );
 
     Logger.debug('EUtilitiesService', 'Initialized with configuration', {
       baseUrl: this.baseUrl,
-      apiKeyPresent: !!this.apiKey,
+      apiKeyPresent: hasApiKey,
       contactEmail: this.contactEmail,
       rateLimit: {
-        maxConcurrent: PUBMED_CONFIG.rate_limit.max_concurrent,
-        minTime: PUBMED_CONFIG.rate_limit.min_time,
+        maxConcurrent: rateConfig.maxConcurrent,
+        minTime: rateConfig.minTime,
+        requestsPerSecond: hasApiKey 
+          ? PUBMED_CONFIG.rate_limit.with_api_key.requests_per_second
+          : PUBMED_CONFIG.rate_limit.without_api_key.requests_per_second
       },
     });
   }
@@ -83,27 +98,87 @@ export class EUtilitiesService {
     params: Record<string, any>, 
     config?: AxiosRequestConfig
   ): Promise<T> {
-    await this.rateLimiter.waitForSlot();
-    Logger.debug('EUtilitiesService', `Rate limit slot acquired for ${endpoint}`);
-
-    const url = `${this.baseUrl}${endpoint}`;
+    // Max retries for rate limit errors
+    const MAX_RETRIES = 3;
+    let retries = 0;
     
-    try {
-      Logger.debug('EUtilitiesService', `Making request to ${url}`, { params });
-      
-      const startTime = Date.now();
-      const response = await axios.get<T>(url, {
-        params,
-        ...config
-      });
-      const duration = Date.now() - startTime;
-      
-      Logger.debug('EUtilitiesService', `Request to ${endpoint} completed in ${duration}ms`);
-      
-      return response.data;
-    } catch (error) {
-      Logger.error('EUtilitiesService', `Error in ${endpoint} request`, error);
-      throw new Error(`E-utilities ${endpoint} request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    while (true) {
+      try {
+        await this.rateLimiter.waitForSlot();
+        Logger.debug('EUtilitiesService', `Rate limit slot acquired for ${endpoint}`);
+
+        const url = `${this.baseUrl}${endpoint}`;
+        
+        // Log request including presence of API key (not the actual key)
+        Logger.debug('EUtilitiesService', `Making request to ${url}`, { 
+          hasApiKey: !!params.api_key,
+          endpoint, 
+          ...Object.fromEntries(
+            Object.entries(params)
+              .filter(([key]) => key !== 'api_key')
+          ) 
+        });
+        
+        const startTime = Date.now();
+        const response = await axios.get<T>(url, {
+          params,
+          ...config,
+          // Add timeout to prevent hanging requests
+          timeout: 30000 // 30 seconds
+        });
+        const duration = Date.now() - startTime;
+        
+        Logger.debug('EUtilitiesService', `Request to ${endpoint} completed in ${duration}ms`);
+        
+        return response.data;
+      } catch (error) {
+        const axiosError = error as any;
+        
+        // Handle rate limiting errors specifically
+        if (axiosError.response && axiosError.response.status === 429) {
+          retries++;
+          if (retries <= MAX_RETRIES) {
+            const waitTime = Math.pow(2, retries) * 1000; // Exponential backoff
+            Logger.warn('EUtilitiesService', `Rate limit exceeded (429). Retry ${retries}/${MAX_RETRIES} after ${waitTime}ms`);
+            
+            // Wait for exponential backoff time
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue; // Retry the request
+          }
+        }
+        
+        // Check for other status codes that might indicate rate limiting
+        if (axiosError.response && (axiosError.response.status === 503 || axiosError.response.status === 504)) {
+          retries++;
+          if (retries <= MAX_RETRIES) {
+            const waitTime = Math.pow(2, retries) * 1000; // Exponential backoff
+            Logger.warn('EUtilitiesService', `Server error (${axiosError.response.status}). Retry ${retries}/${MAX_RETRIES} after ${waitTime}ms`);
+            
+            // Wait for exponential backoff time
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue; // Retry the request
+          }
+        }
+
+        // Log detailed error information
+        Logger.error('EUtilitiesService', `Error in ${endpoint} request`, {
+          message: axiosError.message,
+          status: axiosError.response?.status,
+          statusText: axiosError.response?.statusText,
+          data: axiosError.response?.data,
+          hasApiKey: !!params.api_key,
+          rateLimit: this.rateLimiter.getStatus()
+        });
+        
+        // Throw a more detailed error
+        if (axiosError.response) {
+          throw new Error(`E-utilities ${endpoint} request failed: HTTP ${axiosError.response.status} - ${axiosError.response.statusText || 'Unknown error'}`);
+        } else if (axiosError.request) {
+          throw new Error(`E-utilities ${endpoint} request failed: No response received (timeout or network error)`);
+        } else {
+          throw new Error(`E-utilities ${endpoint} request failed: ${axiosError.message || 'Unknown error'}`);
+        }
+      }
     }
   }
 

@@ -15,11 +15,19 @@ export const PUBMED_CONFIG = {
   page_limit: 1,
   page_size: 5,
   rate_limit: {
-    min_time: 3000,
-    max_concurrent: 3,
-    reservoir: 10,
-    reservoir_refresh_amount: 10,
-    reservoir_refresh_interval: 60 * 1000,
+    // With API key: Up to 10 requests/second
+    // Without API key: Limited to 3 requests/second
+    with_api_key: {
+      requests_per_second: 10,
+      max_concurrent: 5
+    },
+    without_api_key: {
+      requests_per_second: 3,
+      max_concurrent: 3
+    },
+    // Time between requests in milliseconds (1000ms / requests_per_second)
+    min_time_with_key: 100,  // 10 requests per second
+    min_time_without_key: 334, // ~3 requests per second
   },
   journal_quality: {
     impact_factor_threshold: 5,
