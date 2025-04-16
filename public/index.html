@@ -158,11 +158,12 @@
         <option value="cardiology">Cardiology</option>
         <option value="internalmedicine">Internal Medicine</option>
       </select>
-
       <button id="search-btn">Search Articles</button>
     </div>
 
-    <div id="query"></div>
+    <div class="query-container">
+      <div id="query"></div>
+    </div>
 
     <div class="error" id="error-message"></div>
 
@@ -299,8 +300,9 @@
         }
 
         function displayResults(data) {
+          const { metadata } = data;
           // Clear previous results
-
+          query.innerHTML = "";
           articlesContainer.innerHTML = "";
 
           console.log(data);
@@ -310,6 +312,27 @@
               "<p>No articles found for this specialty.</p>";
             results.style.display = "block";
             return;
+          }
+
+          const queryText = document.createElement("div");
+          // push topics
+          if (metadata && metadata.topics && metadata.topics.length > 0) {
+            const topics = document.createElement("p");
+            topics.textContent = `Topics: ${metadata.topics.join(", ")}`;
+            queryText.appendChild(topics);
+          }
+          query.appendChild(queryText);
+          // push filters.clinical_queries
+          if (
+            metadata &&
+            metadata.filters &&
+            metadata.filters.clinical_queries
+          ) {
+            const filters = document.createElement("p");
+            filters.textContent = `Filters: ${metadata.filters.clinical_queries.join(
+              ", "
+            )}`;
+            queryText.appendChild(filters);
           }
 
           // Update pagination info
