@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { JournalMetrics } from '../types';
 
 /**
  * Utility class for reading JSON data files
@@ -36,14 +35,6 @@ class FileReader {
       mesh_terms: string[];
       default_filters: string[];
     }>>('data/specialties.json');
-  }
-
-  /**
-   * Get journal metrics data from the journal-metrics.json file
-   * @returns Journal metrics data
-   */
-  static getJournalMetrics(): Record<string, JournalMetrics> {
-    return this.readJsonFile<Record<string, JournalMetrics>>('data/journal-metrics.json');
   }
 }
 

@@ -74,9 +74,30 @@ class ArticleService {
     // Fetch article details
     const articles = await this.pubmed_service.fetchArticleDetails(pmids);
     
+    // Filter out articles with no abstract
+    const articlesWithAbstracts = articles.filter(article => 
+      article.abstract && article.abstract.trim().length > 0
+    );
+    
+    if (articlesWithAbstracts.length === 0) {
+      Logger.info("ArticleService", "No articles with abstracts found");
+      const duration = Date.now() - start_time;
+
+      return {
+        articles: [],
+        meta: {
+          total: 0,
+          processing_time: duration,
+          saved_filename: "",
+        },
+      };
+    }
+    
+    Logger.debug("ArticleService", `Filtered to ${articlesWithAbstracts.length} articles with abstracts`);
+    
     // Add journal quality scores
     Logger.debug("ArticleService", "Adding journal quality scores");
-    const articlesWithJournalScores = articles.map(article => ({
+    const articlesWithJournalScores = articlesWithAbstracts.map(article => ({
       ...article,
       scores: {
         ...article.scores,
@@ -87,15 +108,25 @@ class ArticleService {
     // Rank articles by relevance using embeddings
     Logger.debug("ArticleService", "Ranking articles by relevance using embeddings");
     const searchQuery = article_request.specialty + (article_request.topics ? " " + article_request.topics.join(" ") : "");
-    const rankedArticles = await this.embedding_service.rankArticlesByRelevance(
+    const articlesWithRelevance = await this.embedding_service.rankArticlesByRelevance(
       searchQuery,
       articlesWithJournalScores
     );
     
-    // Log tier information for debugging
+    // Sort first by journal weight, then by relevance
+    const rankedArticles = articlesWithRelevance.sort((a, b) => {
+      // First sort by journal weight (higher first)
+      if (b.scores.journal_impact !== a.scores.journal_impact) {
+        return b.scores.journal_impact - a.scores.journal_impact;
+      }
+      // Then by relevance score
+      return b.scores.relevance - a.scores.relevance;
+    });
+    
+    // Log journal information for debugging
     rankedArticles.forEach(article => {
-      const tier = this.journal_ranking.getJournalTier(article.journal);
-      Logger.debug("ArticleService", `Journal: "${article.journal}" -> Tier: ${tier}, Score: ${article.scores.journal_impact.toFixed(2)}`);
+      const tierName = this.journal_ranking.getJournalTier(article.journal);
+      Logger.debug("ArticleService", `Journal: "${article.journal}" -> Type: ${tierName}, Score: ${article.scores.journal_impact.toFixed(2)}`);
     });
     
     const duration = Date.now() - start_time;

@@ -1,39 +1,25 @@
 import { Logger } from '../utils/logger';
-import FileReader from '../utils/file-reader';
-
-export type JournalTier = 'Leading' | 'Established' | 'Recognized' | 'Unrated';
+import { CLINICALLY_USEFUL_JOURNALS } from '../data/journals';
 
 /**
- * Service for ranking journals based on quality metrics
+ * Service for ranking journals based on presence in clinically useful journals list
  */
 class JournalRankingService {
-  private journalMetrics: Record<string, any> = {};
+  private usefulJournals: Set<string>;
   private normalizedJournalMap: Map<string, string> = new Map();
   
   constructor() {
-    this.loadJournalMetrics();
-  }
-  
-  /**
-   * Load journal metrics from file
-   */
-  private loadJournalMetrics(): void {
-    try {
-      this.journalMetrics = FileReader.getJournalMetrics();
-      
-      // Create normalized name lookup for fuzzy matching
-      Object.keys(this.journalMetrics).forEach(journal => {
-        this.normalizedJournalMap.set(
-          this.normalizeJournalName(journal), 
-          journal
-        );
-      });
-      
-      Logger.debug('JournalRankingService', `Loaded ${Object.keys(this.journalMetrics).length} journal metrics`);
-    } catch (error) {
-      Logger.error('JournalRankingService', 'Failed to load journal metrics', error);
-      this.journalMetrics = {};
-    }
+    this.usefulJournals = new Set(CLINICALLY_USEFUL_JOURNALS);
+    
+    // Create normalized name lookup for fuzzy matching
+    CLINICALLY_USEFUL_JOURNALS.forEach(journal => {
+      this.normalizedJournalMap.set(
+        this.normalizeJournalName(journal), 
+        journal
+      );
+    });
+    
+    Logger.debug('JournalRankingService', `Loaded ${this.usefulJournals.size} clinically useful journals`);
   }
   
   /**
@@ -50,25 +36,19 @@ class JournalRankingService {
   }
   
   /**
-   * Get journal tier based on quality metrics
+   * Check if a journal is in the clinically useful journals list
    * @param journalName Name of the journal
-   * @returns Journal tier classification
+   * @returns True if the journal is clinically useful
    */
-  public getJournalTier(journalName: string): JournalTier {
+  public isUsefulJournal(journalName: string): boolean {
     // Direct lookup
-    const metrics = this.journalMetrics[journalName];
-    
-    // Try normalized lookup if direct lookup fails
-    if (!metrics) {
-      const normalized = this.normalizeJournalName(journalName);
-      const originalName = this.normalizedJournalMap.get(normalized);
-      if (originalName) {
-        return this.calculateTier(this.journalMetrics[originalName]);
-      }
-      return 'Unrated';
+    if (this.usefulJournals.has(journalName)) {
+      return true;
     }
     
-    return this.calculateTier(metrics);
+    // Try normalized lookup
+    const normalized = this.normalizeJournalName(journalName);
+    return this.normalizedJournalMap.has(normalized);
   }
   
   /**
@@ -77,32 +57,17 @@ class JournalRankingService {
    * @returns Numeric score between 0 and 1
    */
   public getJournalScore(journalName: string): number {
-    const tier = this.getJournalTier(journalName);
-    
-    // Convert tier to numeric score for sorting/ranking
-    switch (tier) {
-      case 'Leading': return 1.0;
-      case 'Established': return 0.7;
-      case 'Recognized': return 0.4;
-      case 'Unrated': 
-      default: return 0.1;
-    }
+    // Higher weight for clinically useful journals, lower for others
+    return this.isUsefulJournal(journalName) ? 1.0 : 0.1;
   }
   
   /**
-   * Calculate journal tier based on metrics
-   * @param metrics Journal metrics
-   * @returns Journal tier
+   * Get journal tier for logging purposes (deprecated but maintained for API compatibility)
+   * @param journalName Name of the journal
+   * @returns Simple tier classification
    */
-  private calculateTier(metrics: any): JournalTier {
-    if (!metrics) return 'Unrated';
-    
-    const { impact_factor = 0, h_index = 0, sjr_score = 0 } = metrics;
-    
-    if (impact_factor > 20 || h_index > 400 || sjr_score > 10) return 'Leading';
-    if (impact_factor > 10 || h_index > 200 || sjr_score > 5) return 'Established';
-    if (impact_factor > 5 || h_index > 100 || sjr_score > 2) return 'Recognized';
-    return 'Unrated';
+  public getJournalTier(journalName: string): string {
+    return this.isUsefulJournal(journalName) ? 'Useful' : 'Standard';
   }
 }
 
