@@ -6,6 +6,7 @@ declare class PubmedService {
     private base_url;
     private api_key;
     private rate_limiter;
+    private content_service;
     constructor();
     /**
      * Search for articles using a PubMed query

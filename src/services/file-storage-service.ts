@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { SavedSearchResult, ProcessedBlueprint, Article } from "../types";
 import { Logger } from "../utils/logger";
+import { ContentProcessor } from "../utils/content-processor";
 
 class FileStorageService {
   private outputDir: string;
@@ -36,7 +37,7 @@ class FileStorageService {
         article_count: totalCount,
         clinical_specialty: blueprint.specialty,
         pmids: pmids,
-        articles: articles.map(article => ({
+        articles: articles.map((article) => ({
           pmid: article.pmid,
           title: article.title,
           abstract: article.abstract,
@@ -50,16 +51,31 @@ class FileStorageService {
           discussion: article.discussion,
           conclusion: article.conclusion,
           figures: article.figures,
-          tables: article.tables,
-          supplementary_material: article.supplementary_material
-        }))
+          tables: article.tables
+            ? ContentProcessor.encodeArray(article.tables)
+            : undefined,
+          supplementary_material: article.supplementary_material,
+          original_xml: ContentProcessor.encodeContent(article.original_xml),
+          sanitized_html: ContentProcessor.encodeContent(
+            article.sanitized_html
+          ),
+        })),
+        encoding_metadata: {
+          tables: "base64",
+          original_xml: "base64",
+          sanitized_html: "base64",
+        },
       };
 
       const filename = this.generateFilename(blueprint);
       const filepath = path.join(this.outputDir, filename);
+      Logger.info(
+        "FileStorageService",
+        `The complete data will be saved at ${filepath} which contains the search results`,
+        this.createContentPreview(result)
+      );
 
       await fs.writeFile(filepath, JSON.stringify(result, null, 2));
-      Logger.info("FileStorageService", `Saved search results to ${filename}`);
 
       return filename;
     } catch (error) {
@@ -69,18 +85,70 @@ class FileStorageService {
   }
 
   /**
+   * Create a log-friendly preview of article content
+   * @param result The saved search result
+   * @returns Object with previews of important fields
+   */
+  private createContentPreview(result: SavedSearchResult): any {
+    // Extract first article for preview (or return empty if no articles)
+    if (result.articles.length === 0) {
+      return { articles: [] };
+    }
+
+    const firstArticle = result.articles[0];
+    
+    // Helper to create truncated preview
+    const preview = (content: string | undefined, maxLength = 100): string => {
+      if (!content) return "[empty]";
+      return content.length > maxLength 
+        ? `${content.substring(0, maxLength)}... (${content.length} chars)`
+        : content;
+    };
+    
+    // For encoded content, show both raw (encoded) preview and decoded preview
+    const encodedPreview = (content: string | undefined, maxLength = 50): string => {
+      if (!content) return "[empty]";
+      const decoded = ContentProcessor.decodeContent(content);
+      return `[Encoded: ${preview(content, maxLength)}] [Decoded: ${preview(decoded, maxLength)}]`;
+    };
+
+    return {
+      article_count: result.article_count,
+      articles_preview: {
+        count: result.articles.length,
+        first_article: {
+          pmid: firstArticle.pmid,
+          title: firstArticle.title,
+          full_text: preview(firstArticle.full_text, 150),
+          methods: preview(firstArticle.methods, 150),
+          results: preview(firstArticle.results, 150),
+          discussion: preview(firstArticle.discussion, 150),
+          conclusion: preview(firstArticle.conclusion, 150),
+          original_xml: encodedPreview(firstArticle.original_xml),
+          sanitized_html: encodedPreview(firstArticle.sanitized_html),
+          tables: Array.isArray(firstArticle.tables) 
+            ? `[${firstArticle.tables.length} tables, first: ${encodedPreview(firstArticle.tables[0])}]`
+            : "[no tables]"
+        }
+      }
+    };
+  }
+
+  /**
    * Generate a filename for the search results
    * @param blueprint The processed blueprint
    * @returns The generated filename
    */
   private generateFilename(blueprint: ProcessedBlueprint): string {
-    const timestamp = new Date().toISOString()
+    const timestamp = new Date()
+      .toISOString()
       .replace(/[:.]/g, "")
       .replace(/[T]/g, "-")
       .replace(/[Z]/g, "");
 
     const sanitize = (str: string): string =>
-      str.toLowerCase()
+      str
+        .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
@@ -89,7 +157,7 @@ class FileStorageService {
       sanitize(blueprint.specialty),
       sanitize(blueprint.filters.clinical_queries[0]),
       "narrow",
-      timestamp
+      timestamp,
     ];
 
     return `${components.join("-")}.json`;

@@ -1,6 +1,14 @@
 // Type definitions for the PubMed Search API
 import { FILTER_MAP } from '../config/pubmed-config';
 
+/**
+ * Metadata about field encoding
+ */
+export interface EncodingMetadata {
+  field_name: string;
+  encoding: 'base64' | 'none';
+}
+
 // Utility types for configuration
 export type ClinicalCategory = keyof typeof FILTER_MAP;
 export type ClinicalScope = keyof (typeof FILTER_MAP)[ClinicalCategory];
@@ -14,6 +22,11 @@ export interface SavedSearchResult {
   clinical_specialty: string;
   pmids: string[];
   articles: SavedArticle[];
+  encoding_metadata?: {
+    tables: 'base64';
+    original_xml: 'base64';
+    sanitized_html: 'base64';
+  };
 }
 
 export interface SavedArticle extends Omit<Article, 'scores' | 'url' | 'pub_date'> {
@@ -51,6 +64,11 @@ export interface ArticleResponse {
     total: number;
     processing_time: number;
     saved_filename: string;
+    encoding?: {
+      tables: 'base64';
+      original_xml: 'base64';
+      sanitized_html: 'base64';
+    };
   };
 }
 

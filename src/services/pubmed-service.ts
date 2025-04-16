@@ -324,18 +324,16 @@ class PubmedService {
           figures: content.figures,
           tables: content.tables,
           supplementary_material: content.supplementary_material,
+          original_xml: content.original_xml,
+          sanitized_html: content.sanitized_html,
         };
         Logger.debug("PubmedService", `Successfully extracted content for PMID ${pmid}`, {
           details,
         });
         return details;
       } catch (error) {
-        Logger.warn(
-          "PubmedService",
-          `Failed to extract full content for PMID ${pmid}, returning basic metadata only`,
-          error
-        );
-        return baseArticle;
+        Logger.error("PubmedService", `Error extracting content for PMID ${pmid}`, error);
+        throw new Error(`Failed to extract content for PMID ${pmid}`);
       }
     }));
   }

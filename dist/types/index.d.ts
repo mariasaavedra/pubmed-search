@@ -1,4 +1,11 @@
 import { FILTER_MAP } from '../config/pubmed-config';
+/**
+ * Metadata about field encoding
+ */
+export interface EncodingMetadata {
+    field_name: string;
+    encoding: 'base64' | 'none';
+}
 export type ClinicalCategory = keyof typeof FILTER_MAP;
 export type ClinicalScope = keyof (typeof FILTER_MAP)[ClinicalCategory];
 export interface SavedSearchResult {
@@ -9,10 +16,25 @@ export interface SavedSearchResult {
     clinical_specialty: string;
     pmids: string[];
     articles: SavedArticle[];
+    encoding_metadata?: {
+        tables: 'base64';
+        original_xml: 'base64';
+        sanitized_html: 'base64';
+    };
 }
 export interface SavedArticle extends Omit<Article, 'scores' | 'url' | 'pub_date'> {
     year: number;
     mesh_terms: string[];
+    full_text?: string;
+    methods?: string;
+    results?: string;
+    discussion?: string;
+    conclusion?: string;
+    figures?: string[];
+    tables?: string[];
+    supplementary_material?: string[];
+    original_xml?: string;
+    sanitized_html?: string;
 }
 export interface ArticleRequest {
     specialty: string;
@@ -31,6 +53,11 @@ export interface ArticleResponse {
         total: number;
         processing_time: number;
         saved_filename: string;
+        encoding?: {
+            tables: 'base64';
+            original_xml: 'base64';
+            sanitized_html: 'base64';
+        };
     };
 }
 export interface Article {
@@ -45,6 +72,16 @@ export interface Article {
         relevance: number;
         journal_impact: number;
     };
+    full_text?: string;
+    methods?: string;
+    results?: string;
+    discussion?: string;
+    conclusion?: string;
+    figures?: string[];
+    tables?: string[];
+    supplementary_material?: string[];
+    original_xml?: string;
+    sanitized_html?: string;
 }
 export interface PubmedSearchResponse {
     header: {
@@ -156,6 +193,18 @@ export interface JournalMetrics {
     h_index?: number;
     sjr_score?: number;
 }
+export interface ContentExtractionResult {
+    full_text: string;
+    methods?: string;
+    results?: string;
+    discussion?: string;
+    conclusion?: string;
+    figures: string[];
+    tables: string[];
+    supplementary_material: string[];
+    original_xml?: string;
+    sanitized_html?: string;
+}
 export interface ParsedArticleData {
     pmid: string;
     title: string;
@@ -164,6 +213,16 @@ export interface ParsedArticleData {
     pub_date: string;
     abstract: string;
     url: string;
+    full_text?: string;
+    methods?: string;
+    results?: string;
+    discussion?: string;
+    conclusion?: string;
+    figures?: string[];
+    tables?: string[];
+    supplementary_material?: string[];
+    original_xml?: string;
+    sanitized_html?: string;
 }
 export interface RankedArticleData extends ParsedArticleData {
     scores: {

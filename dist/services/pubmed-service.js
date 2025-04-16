@@ -8,6 +8,7 @@ const xml2js_1 = require("xml2js");
 const dotenv_1 = __importDefault(require("dotenv"));
 const pubmed_config_1 = require("../config/pubmed-config");
 const rate_limiter_1 = __importDefault(require("../utils/rate-limiter"));
+const article_content_service_1 = __importDefault(require("./article-content-service"));
 const logger_1 = require("../utils/logger");
 // Load environment variables
 dotenv_1.default.config();
@@ -20,6 +21,8 @@ class PubmedService {
         this.api_key = process.env.PUBMED_API_KEY;
         // Initialize rate limiter based on config
         this.rate_limiter = new rate_limiter_1.default(pubmed_config_1.PUBMED_CONFIG.rate_limit.max_concurrent, pubmed_config_1.PUBMED_CONFIG.rate_limit.min_time);
+        // Initialize content service
+        this.content_service = new article_content_service_1.default();
         logger_1.Logger.debug("PubmedService", "Initialized with configuration", {
             base_url: this.base_url,
             api_key_present: !!this.api_key,
@@ -124,10 +127,12 @@ class PubmedService {
             });
             const duration = Date.now() - start_time;
             logger_1.Logger.debug("PubmedService", `API request for article details completed in ${duration}ms`);
+            // Store original XML
+            const original_xml = response.data;
             // Parse XML response
-            const xml_data = await this.ParseXml(response.data);
+            const xml_data = await this.ParseXml(original_xml);
             // Extract article data
-            const articles = this.ExtractArticleData(xml_data);
+            const articles = await this.ExtractArticleData(xml_data, original_xml);
             logger_1.Logger.debug("PubmedService", `Successfully extracted ${articles.length} article details`);
             return articles;
         }
@@ -163,7 +168,7 @@ class PubmedService {
      * @param data PubMed response data
      * @returns Array of parsed article data
      */
-    ExtractArticleData(data) {
+    async ExtractArticleData(data, original_xml) {
         if (!data.PubmedArticleSet || !data.PubmedArticleSet.PubmedArticle) {
             return [];
         }
@@ -171,7 +176,7 @@ class PubmedService {
         const articles = Array.isArray(data.PubmedArticleSet.PubmedArticle)
             ? data.PubmedArticleSet.PubmedArticle
             : [data.PubmedArticleSet.PubmedArticle];
-        return articles.map((article) => {
+        return Promise.all(articles.map(async (article) => {
             const citation = article.MedlineCitation;
             const article_data = citation.Article;
             const pmid = citation.PMID;
@@ -227,7 +232,7 @@ class PubmedService {
                     pub_date = date.MedlineDate;
                 }
             }
-            return {
+            const baseArticle = {
                 pmid,
                 title: article_data.ArticleTitle || "",
                 authors,
@@ -236,7 +241,32 @@ class PubmedService {
                 abstract,
                 url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
             };
-        });
+            try {
+                // Extract full content with original XML
+                const content = await this.content_service.extractContentFromPubMed(pmid, original_xml);
+                const details = {
+                    ...baseArticle,
+                    full_text: content.full_text,
+                    methods: content.methods,
+                    results: content.results,
+                    discussion: content.discussion,
+                    conclusion: content.conclusion,
+                    figures: content.figures,
+                    tables: content.tables,
+                    supplementary_material: content.supplementary_material,
+                    original_xml: content.original_xml,
+                    sanitized_html: content.sanitized_html,
+                };
+                logger_1.Logger.debug("PubmedService", `Successfully extracted content for PMID ${pmid}`, {
+                    details,
+                });
+                return details;
+            }
+            catch (error) {
+                logger_1.Logger.warn("PubmedService", `Failed to extract full content for PMID ${pmid}, returning basic metadata only`, error);
+                return baseArticle;
+            }
+        }));
     }
     /**
      * Get the count of articles matching a query

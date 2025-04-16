@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const promises_1 = __importDefault(require("fs/promises"));
 const path_1 = __importDefault(require("path"));
 const logger_1 = require("../utils/logger");
+const content_processor_1 = require("../utils/content-processor");
 class FileStorageService {
     constructor() {
         this.outputDir = path_1.default.join(process.cwd(), "data", "output");
@@ -36,8 +37,23 @@ class FileStorageService {
                     authors: article.authors,
                     journal: article.journal,
                     year: new Date(article.pub_date).getFullYear(),
-                    mesh_terms: [] // To be populated if/when MeSH terms are available
-                }))
+                    mesh_terms: [], // To be populated if/when MeSH terms are available
+                    full_text: article.full_text,
+                    methods: article.methods,
+                    results: article.results,
+                    discussion: article.discussion,
+                    conclusion: article.conclusion,
+                    figures: article.figures,
+                    tables: article.tables ? content_processor_1.ContentProcessor.encodeArray(article.tables) : undefined,
+                    supplementary_material: article.supplementary_material,
+                    original_xml: content_processor_1.ContentProcessor.encodeContent(article.original_xml),
+                    sanitized_html: content_processor_1.ContentProcessor.encodeContent(article.sanitized_html)
+                })),
+                encoding_metadata: {
+                    tables: 'base64',
+                    original_xml: 'base64',
+                    sanitized_html: 'base64'
+                }
             };
             const filename = this.generateFilename(blueprint);
             const filepath = path_1.default.join(this.outputDir, filename);

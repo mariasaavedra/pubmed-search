@@ -118,7 +118,12 @@ class ArticleController {
         meta: {
           total: total_count,
           processing_time: duration,
-          saved_filename
+          saved_filename,
+          encoding: {
+            tables: 'base64',
+            original_xml: 'base64',
+            sanitized_html: 'base64'
+          }
         }
       });
     } catch (error) {
