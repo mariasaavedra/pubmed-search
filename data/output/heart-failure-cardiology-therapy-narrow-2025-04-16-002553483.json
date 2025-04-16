@@ -1,0 +1,219 @@
+{
+  "clinical_category": "Therapy",
+  "clinical_scope": "narrow",
+  "esearch_query": "(((\"Heart Failure\"[MeSH Terms] OR \"Heart Failure\"[Title/Abstract] OR \"Cardiac Failure\"[MeSH Terms] OR \"Cardiac Failure\"[Title/Abstract]) AND (\"Hypertension\"[MeSH Terms] OR \"Hypertension\"[Title/Abstract] OR \"High Blood Pressure\"[MeSH Terms] OR \"High Blood Pressure\"[Title/Abstract]))) AND (((((clinical[Title/Abstract] AND trial[Title/Abstract]) OR clinical trials as topic[MeSH Terms] OR clinical trial[Publication Type] OR random*[Title/Abstract] OR random allocation[MeSH Terms] OR therapeutic use[MeSH Subheading])) OR (sensitiv*[Title/Abstract] OR sensitivity and specificity[MeSH Terms] OR diagnose[Title/Abstract] OR diagnosed[Title/Abstract] OR diagnoses[Title/Abstract] OR diagnosing[Title/Abstract] OR diagnosis[Title/Abstract] OR diagnostic[Title/Abstract] OR diagnosis[MeSH:noexp])) AND \"last 2 years\"[PDat])",
+  "article_count": 2449,
+  "clinical_specialty": "cardiology",
+  "pmids": [
+    "40231031",
+    "40230888",
+    "40229617",
+    "40226538",
+    "40224298",
+    "40222820",
+    "40217275",
+    "40216777",
+    "40215398",
+    "40214750"
+  ],
+  "articles": [
+    {
+      "pmid": "40222820",
+      "title": "Finerenone, chronic obstructive pulmonary disease, and heart failure with mildly reduced or preserved ejection fraction: A prespecified analysis of the FINEARTS-HF trial.",
+      "abstract": "Chronic obstructive pulmonary disease (COPD) is associated with worse outcomes in heart failure (HF) with mildly reduced or preserved ejection fraction (HFmrEF/HFpEF). A post hoc analysis of TOPCAT suggested that the effectiveness of the steroidal mineralocorticoid receptor antagonist (MRA), spironolactone, may be modified by pulmonary disease, with a greater benefit in patients with COPD/asthma. We examined the effects of the non-steroidal MRA, finerenone, compared to placebo, according to COPD status in a prespecified analysis of FINEARTS-HF. A history of COPD was investigator-reported. The primary outcome was the composite of cardiovascular death and total worsening HF events. Of the 6001 patients randomized in FINEARTS-HF, 773 patients (12.9%) had COPD. Compared to patients without COPD, those with COPD had more adverse clinical features, including worse New York Heart Association class and Kansas City Cardiomyopathy Questionnaire (KCCQ) scores, more prior HF hospitalization, atrial fibrillation/flutter, obesity, peripheral artery disease, and hypertension, as well as elevated high-sensitivity troponin T levels. Patients with COPD had a higher risk of the primary endpoint (adjusted rate ratio [RR] 1.44, 95% confidence interval [CI] 1.21-1.71). The benefit of finerenone on the primary outcome was consistent irrespective of COPD status (no COPD: RR 0.84 [95% CI 0.73-0.97]; COPD: 0.84 [95% CI 0.61-1.16]; p = 0.93). Consistent effects were also observed for all secondary outcomes. Finerenone improved KCCQ total symptom score from baseline to 12 months to a similar extent in patients with and without COPD (p = 0.46). In patients with HFmrEF/HFpEF, the beneficial effects of finerenone on clinical events and symptoms were consistent, regardless of COPD status. ClinicalTrials.gov ID NCT04435626.",
+      "authors": [
+        "Butt JH",
+        "Jhund PS",
+        "Henderson AD",
+        "Claggett BL",
+        "Desai AS",
+        "Lam CSP",
+        "Mueller K",
+        "Scheerer MF",
+        "Viswanathan P",
+        "Senni M",
+        "Shah SJ",
+        "Voors AA",
+        "Zannad F",
+        "Pitt B",
+        "Vaduganathan M",
+        "Solomon SD",
+        "McMurray JJV"
+      ],
+      "journal": "European journal of heart failure",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40230888",
+      "title": "The health effects of housing instability and its association with congestive heart failure.",
+      "abstract": "Housing instability is a critical social determinant of health (SDOH). Prior studies of homelessness and congestive heart failure (CHF) have looked primarily at the association between socioeconomic status and hospitalization. The association between housing instability and the development of CHF has not been fully investigated. We examined data from 4,408 participants with annual household income below $50,000 in the All of Us Research Program, a national cohort study enriched for individuals underrepresented in biomedical research. Within the inceptive survey, participants were asked if they were worried or concerned about not having a place to live in the past 6 months. We assessed the association between this self-reported housing concern and CHF occurrence, finding that individuals with low income and housing instability had a 44 % higher risk of diagnosis of CHF than those with stable housing (HR 1.44; 95 %CI 1.03-2.01). The increased risk remained significant after adjusting for cardiovascular risk factors as potential confounders (HR 1.73; 95 %CI 1.19-2.51) such as cholesterol, history of diabetes, and older age categories aged 55-64 years, 65-74 years, 75 years and older. Compared with men, women in the study were estimated to be at lower risk of CHF diagnosis (HR 0.52; 95 %CI 0.38-0.70) with 5.3 % of men and 2.9 % of women eventually diagnosed. We found that participants with housing instability had a higher risk of diagnosis of CHF compared to those with stable housing, highlighting the potential health impact of this healthcare disparity. Housing instability disrupts the essentials of effective management of cardiovascular risk factors (diabetes, obesity, hypertension) including consistent management, reliable access to care, and access to basic needs like kitchen and bathroom. This exacerbates their severity and increasing the risk of being diagnosed with CHF.",
+      "authors": [
+        "Novin N",
+        "Jones SS",
+        "Cohn E",
+        "Parikh N",
+        "Zhang D",
+        "Yu PJ",
+        "Coleman K",
+        "Leon LDO",
+        "Chiuzan C"
+      ],
+      "journal": "American journal of preventive cardiology",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40217275",
+      "title": "Prognostic value of non-invasive right ventricle-pulmonary artery coupling in patients with pulmonary hypertension associated with left heart disease.",
+      "abstract": "This study aims to assess the prognostic significance of non-invasive right ventricle-pulmonary artery coupling in patients with pulmonary hypertension associated with left heart disease (PH-LHD) and identify the relevant clinical factors involved. A cohort of 362 patients diagnosed with PH-LHD was included in this study. Plasma N-terminal pro-B-type natriuretic peptide (NT-proBNP) levels were measured using enzyme-linked immunosorbent assay (ELISA). Echocardiography was employed to screen routine ultrasound parameters. The tricuspid annular plane systolic excursion/pulmonary artery systolic pressure (TAPSE/PASP) and S'/PASP ratios were calculated. Participants were categorized into two groups based on the TAPSE/PASP ratio: moderate-to-severe and mild uncoupling groups. Both groups underwent routine follow-up for a period of 3 to 15 months. Clinical events included all-cause mortality, heart failure rehospitalization, and stroke. Clinical events were documented, and a multivariate Cox regression model evaluated the correlation between the TAPSE/PASP ratio and prognosis. The Kaplan-Meier survival analysis was also conducted. The moderate-to-severe uncoupling group exhibited significantly higher proportions of males; individuals with a history of smoking, valvular disease, diabetes mellitus, or stroke; and elevated levels of PASP, right ventricular diameter (RVD), left ventricular diameter (LVD), left ventricular end-diastolic (LVED), and lg (NT-proBNP) compared to the mild uncoupling group (P < 0.05). Conversely, parameters such as age, TAPSE, S', S' /PASP, and left ventricular ejection fraction (LVEF) were significantly lower in the moderate-to-severe uncoupling group compared to the mild uncoupling group (P < 0.05). Multivariate Cox regression analysis revealed that TAPSE/PASP (hazard ratio [HR] = 0.150, 95% confidence interval [CI] [0.023, 0.968], P = 0.046) was a protective factor for the recurrence of clinical events. In contrast, LVED (HR = 1.301, 95% CI (1.004, 1.059), P = 0.024) and lg (NT-proBNP) (HR = 1.870, 95%CI [1.304, 2.682], P = 0.001) were independent risk factors for the recurrence of clinical events. KaplanMeier survival analysis demonstrated that the mild uncoupling group exhibited a significantly higher overall survival rate compared to the moderate-to-severe uncoupling group (Log Rank P = 0.024). The TAPSE/PASP ratio is a predictive marker for clinical outcomes in patients with PH-LHD.",
+      "authors": [
+        "Dou LZ",
+        "Li SS",
+        "Wang S",
+        "Jiang H",
+        "Zheng YL",
+        "Duan MM",
+        "Zhang YG",
+        "Han B",
+        "Li JM",
+        "Ruan HY"
+      ],
+      "journal": "Journal of cardiothoracic surgery",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40214750",
+      "title": "Aldosterone-targeted therapies: early implementation in resistant hypertension and chronic kidney disease.",
+      "abstract": "Treatment-resistant hypertension (TRH) often coexists with chronic kidney disease (CKD), and the presence of both conditions increases the risk of adverse cardiovascular outcomes. Patients with TRH and CKD exhibit enhanced aldosterone and mineralocorticoid receptor expression, which promote inflammation and fibrosis in cardiac and renal tissues, contributing to the development and progression of cardiorenal diseases. Both achieving optimal blood pressure (BP) control and mitigating the risk of aldosterone-related adverse events are cornerstones in the management of patients with TRH and CKD. Mineralocorticoid receptor antagonists (MRAs) are recommended for the treatment of TRH. To date, the efficacy has been investigated in populations with mostly normal renal function. However, the potential risk of hyperkalaemia limits the use of MRAs, particularly in patients with CKD. Non-steroidal MRAs and sodium glucose cotransporter-2 inhibitors have slowed renal function decline and shown cardiorenal benefits. Additionally, aldosterone synthase inhibitors may emerge as a therapeutic option for patients with TRH. Clinical trials for TRH primarily centred on assessing BP-lowering effects; however, merely lowering BP might not be a sufficient target to prevent a risk of cardiorenal disease progression. This paper presents evidence and potential benefits of aldosterone-targeted therapy in the treatment of TRH and CKD and re-consider the treatment strategies in clinical practice and trial design.",
+      "authors": [
+        "Kobayashi M",
+        "Pitt B",
+        "Ferreira JP",
+        "Rossignol P",
+        "Girerd N",
+        "Zannad F"
+      ],
+      "journal": "European heart journal",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40226538",
+      "title": "Hydralazine-Induced ANCA Vasculitis Presenting With Pericarditis: A Novel Case and Literature Review.",
+      "abstract": "Hydralazine, a commonly used arterial vasodilator for managing congestive heart failure and hypertension, is known to be associated with drug-induced lupus and, less frequently, antineutrophil cytoplasmic antibody (ANCA)-associated vasculitis (AAV). Drug-induced AAV typically carries a favorable long-term prognosis and is not commonly linked to cardiovascular or ocular involvement. Pericarditis cases associated with hydralazine have not been previously reported. We present a rare case involving an 85-year-old woman on long-term hydralazine therapy, initially presenting with acute lobar pneumonia. During her hospitalization, she developed pericarditis, chemosis, and conjunctivitis in her eyes, along with cutaneous lesions described as a maculopapular rash on her face, tender bullae on her digits, and a petechial rash on her back. Laboratory findings were consistent with drug-induced AAV, showing positive myeloperoxidase and proteinase 3 antibodies. An attempted diagnostic pericardiocentesis was unsuccessful. Hydralazine was discontinued, and she was successfully treated with corticosteroids and tolerated immunosuppression well. Subsequently, she recovered and was discharged from the hospital.",
+      "authors": [
+        "Hammami AS",
+        "Oriaifo O",
+        "Hidri S",
+        "Singh S",
+        "El Sharu H",
+        "Peltz J",
+        "Nomigolzar S",
+        "Udani K"
+      ],
+      "journal": "Case reports in cardiology",
+      "year": 2024,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40231031",
+      "title": "Clinical characteristics and mortality risk factors in pediatric hypertrophic, restrictive, and rapidly progressive hypertrophic cardiomyopathy: a retrospective cohort study with follow-up.",
+      "abstract": "Pediatric cardiomyopathies are rare but life-threatening conditions with high mortality. Limited data exists on their clinical features and risk factors, especially in Asian populations, highlighting the need for further research in this area. This retrospective cohort study analyzed data from 212 pediatric patients diagnosed with hypertrophic cardiomyopathy (HCM), restrictive cardiomyopathy (RCM), or restrictive phenotype hypertrophic cardiomyopathy (RP-HCM) at a single center in China from October 2012 to October 2023, with follow-up until October 31, 2024. Demographic, clinical, and diagnostic data, as well as follow-up outcomes, were reviewed. Logistic and Cox regression models identified risk factors for in-hospital and long-term mortality. Among the 212 patients, 79.72% (169/212) had HCM, 16.98% (36/212) had RCM, and 3.30% (7/212) had RP-HCM. Infection (75.47%, 160/212) and heart failure (51.42%, 109/212) were common comorbidities. In-hospital mortality was 5.19% (11/212), with follow-up mortality of 20.28% (43/212). The independent risk factors for mortality included left ventricular ejection fraction (LVEF), pulmonary hypertension, and low-density lipoprotein (LDL) levels ( < 0.05). Patients with RP-HCM showed the poorest outcomes, with a follow-up mortality rate of 42.86%. Only 10.4% (22/212) of patients underwent genetic testing, yet the positive detection rate was 63.7% (14/22). This study underscores the importance of early diagnosis, genetic testing, and integrated management in pediatric cardiomyopathies. LVEF, pulmonary hypertension, and LDL levels are critical prognostic factors, offering insights for risk assessment and management in affected children.",
+      "authors": [
+        "Nawaz A",
+        "Sheng Z",
+        "Akram MJ",
+        "Li J",
+        "Liu L",
+        "Yuan Y",
+        "Tian J"
+      ],
+      "journal": "Frontiers in cardiovascular medicine",
+      "year": 2024,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40229617",
+      "title": "Causal atlas on comorbidities in cardiomyopathy: a Mendelian randomization study of European ancestry.",
+      "abstract": "Cardiomyopathy (CM) is often accompanied by comorbidities that increase the risk of death. Our aim is to explore the causal association between CM and its subtypes and various related comorbidities. Bidirectional Mendelian randomization (MR) was used to explore the causal association between 39 comorbidities and CM, 13 comorbidities and hypertrophic cardiomyopathy (HCM), 25 comorbidities and dilated cardiomyopathy (DCM), and 13 comorbidities and restrictive cardiomyopathy (RCM). Besides, we explored the causal associations between systolic, diastolic, and pulse pressure with CM and DCM, respectively. MR Mediation analysis was used to explore whether atrial fibrillation (AF) or hypertension was as mediating variable mediating the causal association between each other and CM. By MR analysis, we found that AF (OR = 1.28) and hypertension (OR = 3.58) were associated with an increased risk of CM, and CM was causally associated with an increased risk of heart failure (OR = 1.40). In addition, hypertension was causally associated with a lower risk of DCM (OR = 0.22). The results of the causal association of systolic, diastolic, and pulse pressure with CM and DCM were consistent with the direction of the causal association of hypertension with CM and DCM. Through MR Mediation analysis, we found AF as a mediating factor mediates the causal association between hypertension and CM, with a mediating proportion of about 16.22%. This study is the first to reveal the causal association between certain comorbidities and CM and DCM, and to find possible mediating effects among them.",
+      "authors": [
+        "Sun M",
+        "Gao M",
+        "Huang P",
+        "Luo M",
+        "Wang T",
+        "Ruan X",
+        "Chen K",
+        "Tang J",
+        "Chen Y",
+        "Qin J"
+      ],
+      "journal": "Clinical research in cardiology : official journal of the German Cardiac Society",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40224298",
+      "title": "Major Adverse Cardiovascular Events in Patients with Melanoma Receiving Immune Checkpoint Inhibitors.",
+      "abstract": "Immune checkpoint inhibitors (ICIs) might increase the risk of major adverse cardiovascular events (MACEs). This study aimed to evaluate the risk of MACE in patients with melanoma after ICI initiation. We conducted a before-after cohort study using claims data from Optum's deidentified Clinformatics Data Mart Database. We included adult patients with melanoma who received any approved ICI between 2011 and 2021 with a minimum of 12 months of observable data before ICI. The main outcome was time to first MACE (myocardial infarction, coronary revascularization, stroke, heart failure hospitalization) and rate of MACE before and after ICI, ascertained using , 9th/10th Revision diagnostic codes. Hazard ratio (HR) and incidence rate ratio (IRR) were calculated. We identified 4024 patients with ICI-treated melanoma. Mean age was 67.4 years (SD 14.1), 36% were women; 3066 (76.2%) received monotherapy and 958 (23.8%) combination immunotherapy. A total of 160 (4%) patients had a MACE before ICI and 224 (5.6%) after ICI (HR, 1.76; 95% CI, 1.47-2.12). MACE rate in the year before ICI was 56.16 per 1000 person-years compared with 80.91 per 1000 person-years the year after ICI (IRR, 1.44; 95% CI, 1.21-1.72). Ten cases of myocarditis were observed after ICI, 50% of them had a MACE. Risk factors associated with MACE after ICI were prior MACE, other cardiovascular conditions, hypertension, and older age. Glucocorticoid use was not associated with MACE. Our results suggest that ICI might increase the risk of MACE in patients with melanoma during the first year after ICI.",
+      "authors": [
+        "Ruiz JI",
+        "Zhao B",
+        "Palaskas N",
+        "Deswal A",
+        "Zhao H",
+        "McQuade J",
+        "Suarez-Almazor ME"
+      ],
+      "journal": "Journal of immunotherapy and precision oncology",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40216777",
+      "title": "Cardiovascular post-acute sequelae of SARS-CoV-2 in children and adolescents: cohort study using electronic health records.",
+      "abstract": "The risk of cardiovascular outcomes following SARS-CoV-2 infection has been reported in adults, but evidence in children and adolescents is limited. This paper assessed the risk of a multitude of cardiac signs, symptoms, and conditions 28-179 days after infection, with outcomes stratified by the presence of congenital heart defects (CHDs), using electronic health records (EHR) data from 19 children's hospitals and health institutions from the United States within the RECOVER consortium between March 2020 and September 2023. The cohort included 297,920 SARS-CoV-2-positive individuals and 915,402 SARS-CoV-2-negative controls. Every individual had at least a six-month follow-up after cohort entry. Here we show that children and adolescents with prior SARS-CoV-2 infection are at a statistically significant increased risk of various cardiovascular outcomes, including hypertension, ventricular arrhythmias, myocarditis, heart failure, cardiomyopathy, cardiac arrest, thromboembolism, chest pain, and palpitations, compared to uninfected controls. These findings were consistent among patients with and without CHDs. Awareness of the heightened risk of cardiovascular disorders after SARS-CoV-2 infection can lead to timely referrals, diagnostic evaluations, and management to mitigate long-term cardiovascular complications in children and adolescents.",
+      "authors": [
+        "Zhang B",
+        "Thacker D",
+        "Zhou T",
+        "Zhang D",
+        "Lei Y",
+        "Chen J",
+        "Chrischilles EA",
+        "Christakis DA",
+        "Fernandez S",
+        "Garg V",
+        "Kim S",
+        "Mosa ASM",
+        "Sills MR",
+        "Taylor BW",
+        "Williams DA",
+        "Wu Q",
+        "Forrest CB",
+        "Chen Y"
+      ],
+      "journal": "Nature communications",
+      "year": 2025,
+      "mesh_terms": []
+    },
+    {
+      "pmid": "40215398",
+      "title": "A Web-Based Tool to Perform a Values Clarification for Stroke Prevention in Patients With Atrial Fibrillation: Design and Preliminary Testing Study.",
+      "abstract": "Atrial fibrillation (AF) is associated with an increased risk of stroke. Oral anticoagulation (OAC) is used for stroke prevention in AF, but it also increases bleeding risk. Clinical guidelines do not definitively recommend for or against OAC for patients with borderline stroke risk. Decision-making may benefit from values clarification exercises to communicate risk trade-offs. This study aimed to evaluate if a visual with a values clarification alters the understanding of the trade-offs of anticoagulation in AF. Participants aged 45-64 years were recruited across the United States via an online survey. While answering the survey, they were asked to imagine they were newly diagnosed with AF with a CHA2DS2-VASc (congestive heart failure; hypertension; age ≥75 years [doubled]; type 2 diabetes; previous stroke, transient ischemic attack, or thromboembolism [doubled]; vascular disease; age 65 to 75 years; and sex category) score of 1 for men and 2 for women. Eligibility criteria included no diagnosis of AF and no prior OAC use. Participants were randomized to one of three conditions: (1) standard text-based information only (n=255), (2) visual aids showing stroke-risk probabilities (n=218), or (3) visual aids plus a values clarification exercise (visual+VC; n=200). Participants were subrandomized within the 2 visual-based groups to view either a gauge display or an icon array representing stroke risk. All participants read a hypothetical scenario of being newly diagnosed with AF and hypertension. The primary outcome was decision confidence as measured by the SURE (Sure of Myself; Understand Information; Risk-Benefit Ratio; Encouragement) test. Secondary measures included participants' perceived stroke risk reduction, worry about stroke or bleeding, and likelihood to choose OAC. A total of 673 participants completed the survey. The overall SURE test was 61.2% (156/255) for the standard, 66.5% (145/218) for the visual, and 67% (134/200) for the visual+VC group (visual vs standard P=.23; visual+VC vs standard P=.20). Participants were less likely to choose OAC in the visual groups (standard: mean 58.3, SD 30; visual: mean 51.4, SD 32; visual+VC: 51.9, SD 28; P=.03). Participants felt the reduction in stroke risk from an OAC was less in the visual groups (standard: mean 63.8, SD 22; visual: mean 54.2, SD 28; visual+VC: mean 58.6, SD 25; P<.001). Visualization methods (gauge vs icon array) showed no significant differences in overall SURE test results. Participants were less likely to choose OAC and perceived a smaller stroke risk reduction with gauge than icon array (OAC choice: gauge 48.8, icon array 55.4; P=.03; stroke risk reduction: gauge 52.1, icon array 60.4; P=.001). Visual aids can modestly affect decision confidence and perceptions regarding the benefits of OAC but do not significantly alter decision certainty in a scenario where the guidelines do not recommend for or against OAC. Future work should determine the role of a gauge versus icon array visual for decision-making in stroke prevention in AF.",
+      "authors": [
+        "Dorsch MP",
+        "Flynn AJ",
+        "Greer KM",
+        "Ganai S",
+        "Barnes GD",
+        "Zikmund-Fisher B"
+      ],
+      "journal": "JMIR cardio",
+      "year": 2025,
+      "mesh_terms": []
+    }
+  ]
+}
