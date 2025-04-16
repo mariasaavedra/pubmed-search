@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_FILTER = exports.FILTER_MAP = exports.AGE_MAP = exports.PUBMED_CONFIG = void 0;
+exports.DEFAULT_FILTER = exports.FILTER_MAP = exports.AGE_MAP = exports.CORE_CLINICAL_JOURNALS_FILTER = exports.PUBMED_CONFIG = void 0;
 exports.PUBMED_CONFIG = {
     // PubMed API
     // https://www.ncbi.nlm.nih.gov/books/NBK25501/
@@ -23,6 +23,18 @@ exports.PUBMED_CONFIG = {
         sjr: 5,
     },
 };
+/**
+ * Core Clinical Journals filter (AIM = Abridged Index Medicus)
+ *
+ * This filter restricts search results to approximately 120 core clinical journals
+ * curated by the National Library of Medicine for their clinical relevance and quality.
+ *
+ * This filter is always applied to all search queries to ensure high-quality, clinically
+ * relevant results.
+ *
+ * Learn more: https://www.nlm.nih.gov/bsd/aim.html
+ */
+exports.CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]";
 exports.AGE_MAP = {
     "Newborn: Birth-1 month": "infant, newborn[mh]",
     "Infant: Birth-23 months": "infant[mh]",

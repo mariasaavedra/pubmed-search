@@ -18,6 +18,18 @@ export declare const PUBMED_CONFIG: {
         readonly sjr: 5;
     };
 };
+/**
+ * Core Clinical Journals filter (AIM = Abridged Index Medicus)
+ *
+ * This filter restricts search results to approximately 120 core clinical journals
+ * curated by the National Library of Medicine for their clinical relevance and quality.
+ *
+ * This filter is always applied to all search queries to ensure high-quality, clinically
+ * relevant results.
+ *
+ * Learn more: https://www.nlm.nih.gov/bsd/aim.html
+ */
+export declare const CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]";
 export declare const AGE_MAP: {
     readonly "Newborn: Birth-1 month": "infant, newborn[mh]";
     readonly "Infant: Birth-23 months": "infant[mh]";

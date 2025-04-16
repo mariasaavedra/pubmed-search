@@ -16,14 +16,23 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3000;
 const host = '0.0.0.0';
-// Middleware
+// Basic middleware
+app.use((0, cors_1.default)());
+// Serve static files from public directory
+app.use(express_1.default.static('public'));
+// Body parsing middleware - MUST BE BEFORE ROUTES
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
-app.use((0, cors_1.default)());
-// Request logging middleware
+// Logging middleware
 app.use(request_logger_1.requestLogger);
-// Routes
-app.use("/api", article_routes_1.default);
+// Debug middleware to inspect requests
+app.use((req, res, next) => {
+    console.log(`[DEBUG] Received ${req.method} ${req.url}`);
+    console.log('[DEBUG] Request Body:', req.body);
+    next();
+});
+// Mount routes
+app.use(article_routes_1.default);
 // Health check endpoint
 app.get("/health", (req, res) => {
     res.json({
@@ -41,6 +50,7 @@ app.get("/", (req, res) => {
             articles: "POST /api/articles",
             specialties: "GET /api/specialties",
             topics: "GET /api/specialties/{specialty}/topics",
+            "articles/specialty": "POST /api/articles/specialty",
         },
         config: {
             rate_limit: {

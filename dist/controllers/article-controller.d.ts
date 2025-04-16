@@ -10,7 +10,7 @@ declare class ArticleController {
      * @param req Express request
      * @param res Express response
      */
-    getArticles(req: Request, res: Response): Promise<void>;
+    getArticles(req: Request, res: Response): Promise<void | Response>;
     /**
      * Get suggested topics for a specialty
      * @param req Express request
@@ -22,7 +22,8 @@ declare class ArticleController {
      * @param req Express request
      * @param res Express response
      */
-    getArticlesBySpecialty(req: Request, res: Response): Promise<void>;
-    getSpecialties(_req: Request, res: Response): void;
+    getArticlesBySpecialty(req: Request, res: Response): Promise<void | Response>;
+    getRandomItems<T>(arr: T[], count: number): T[];
+    getSpecialties(req: Request, res: Response): void;
 }
 export default ArticleController;

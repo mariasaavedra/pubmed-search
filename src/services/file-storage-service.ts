@@ -40,14 +40,21 @@ class FileStorageService {
         clinical_specialty: blueprint.specialty,
         pmids: pmids,
         articles: articles.map((article) => ({
+          // Include all required Article properties
           pmid: article.pmid,
           title: article.title,
           abstract: article.abstract,
           authors: article.authors,
           journal: article.journal,
+          pub_date: article.pub_date,
+          url: article.url,
+          scores: article.scores,
+          
+          // Include our custom properties
           year: new Date(article.pub_date).getFullYear(),
-          // Use extracted MeSH terms if available, otherwise generate them
           mesh_terms: (article as any).mesh_terms || this.generateMeshTerms(article),
+          
+          // Include optional properties
           full_text: article.full_text,
           methods: article.methods,
           results: article.results,

@@ -20,15 +20,38 @@ class ArticleController {
     async getArticles(req, res) {
         try {
             logger_1.Logger.debug("ArticleController", "Received article request", req.body);
-            const result = await this.article_service.getArticles(req.body);
+            // Validate request body
+            if (!req.body || typeof req.body !== "object") {
+                return res.status(400).json({
+                    error: "Bad Request",
+                    message: "Request body must be a valid JSON object",
+                    timestamp: new Date().toISOString(),
+                    path: req.path,
+                });
+            }
+            // Handle pagination
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const requestData = {
+                ...req.body,
+                page,
+                limit,
+            };
+            const result = await this.article_service.getArticles(requestData);
             res.json(result);
         }
         catch (error) {
             logger_1.Logger.error("ArticleController", "Error retrieving articles", error);
-            res.status(error instanceof Error && error.message === "Invalid query construction" ? 400 : 500)
+            res
+                .status(error instanceof Error &&
+                error.message === "Invalid query construction"
+                ? 400
+                : 500)
                 .json({
                 error: "An error occurred while processing your request",
                 message: error instanceof Error ? error.message : "Unknown error",
+                timestamp: new Date().toISOString(),
+                path: req.path,
             });
         }
     }
@@ -46,10 +69,16 @@ class ArticleController {
         }
         catch (error) {
             logger_1.Logger.error("ArticleController", "Error getting suggested topics", error);
-            res.status(error instanceof Error && error.message === "Specialty parameter is required" ? 400 : 500)
+            res
+                .status(error instanceof Error &&
+                error.message === "Specialty parameter is required"
+                ? 400
+                : 500)
                 .json({
                 error: "An error occurred while retrieving suggested topics",
                 message: error instanceof Error ? error.message : "Unknown error",
+                timestamp: new Date().toISOString(),
+                path: req.path,
             });
         }
     }
@@ -61,19 +90,87 @@ class ArticleController {
     async getArticlesBySpecialty(req, res) {
         try {
             logger_1.Logger.debug("ArticleController", "Received specialty-only article request", req.body);
-            const result = await this.article_service.getArticles({ specialty: req.body.specialty });
-            res.json(result);
+            // Validate request body
+            if (!req.body || typeof req.body !== "object") {
+                return res.status(400).json({
+                    error: "Bad Request",
+                    message: "Request body must be a valid JSON object",
+                    timestamp: new Date().toISOString(),
+                    path: req.path,
+                });
+            }
+            if (!req.body.specialty || typeof req.body.specialty !== "string") {
+                return res.status(400).json({
+                    error: "Bad Request",
+                    message: "specialty must be a non-empty string",
+                    timestamp: new Date().toISOString(),
+                    path: req.path,
+                });
+            }
+            // Handle pagination
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            // Get suggested topics for the specialty but limit them to avoid URL too long errors
+            const { topics: allTopics } = this.article_service.getSuggestedTopics(req.body.specialty);
+            // Only use the random 5 topics to keep the query manageable
+            const topics = this.getRandomItems(allTopics, 5); // Log the selected topics
+            logger_1.Logger.debug("ArticleController", `Randomly selected topics: ${topics.join(", ")}`);
+            const result = await this.article_service.getArticles({
+                specialty: req.body.specialty,
+                topics,
+                filters: {
+                    clinical_queries: ["Therapy", "Diagnosis"],
+                    year_range: 2,
+                },
+                page,
+                limit,
+            });
+            res.json({
+                ...result,
+                metadata: {
+                    specialty: req.body.specialty,
+                    topics,
+                    filters: {
+                        clinical_queries: ["Therapy", "Diagnosis"],
+                        year_range: 2,
+                    },
+                    page,
+                    limit,
+                },
+            });
         }
         catch (error) {
             logger_1.Logger.error("ArticleController", "Error retrieving articles by specialty", error);
-            res.status(error instanceof Error && error.message === "Invalid query construction" ? 400 : 500)
+            res
+                .status(error instanceof Error &&
+                error.message === "Invalid query construction"
+                ? 400
+                : 500)
                 .json({
                 error: "An error occurred while processing your request",
                 message: error instanceof Error ? error.message : "Unknown error",
+                timestamp: new Date().toISOString(),
+                path: req.path,
             });
         }
     }
-    getSpecialties(_req, res) {
+    getRandomItems(arr, count) {
+        if (count > arr.length) {
+            throw new Error("Count cannot be greater than the array length.");
+        }
+        const shuffled = [...arr];
+        const randomIndices = new Uint32Array(count);
+        crypto.getRandomValues(randomIndices);
+        for (let i = 0; i < count; i++) {
+            const randomIndex = randomIndices[i] % shuffled.length;
+            [shuffled[i], shuffled[randomIndex]] = [
+                shuffled[randomIndex],
+                shuffled[i],
+            ];
+        }
+        return shuffled.slice(0, count);
+    }
+    getSpecialties(req, res) {
         try {
             logger_1.Logger.debug("ArticleController", "Getting all available specialties");
             const result = this.article_service.getSpecialties();
@@ -84,6 +181,8 @@ class ArticleController {
             res.status(500).json({
                 error: "An error occurred while retrieving specialties",
                 message: error instanceof Error ? error.message : "Unknown error",
+                timestamp: new Date().toISOString(),
+                path: req.path,
             });
         }
     }
