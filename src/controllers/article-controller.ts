@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import BlueprintService from "../services/blueprint-service";
 import QueryService from "../services/query-service";
 import PubmedService from "../services/pubmed-service";
-import FileStorageService from "../services/file-storage-service";
 import { ArticleRequest } from "../types";
 import { Logger } from "../utils/logger";
 
@@ -69,24 +68,13 @@ class ArticleController {
       if (pmids.length === 0) {
         Logger.info("ArticleController", "No articles found for query");
         const duration = Date.now() - start_time;
-        const saved_filename = await this.file_storage_service.saveSearchResult(
-          [],
-          blueprint,
-          query,
-          [],
-          0
-        );
-        Logger.info(
-          "ArticleController",
-          `Empty search results saved to ${saved_filename}`
-        );
+
 
         res.json({
           articles: [],
           meta: {
             total: 0,
             processing_time: duration,
-            saved_filename,
           },
         });
         return;
