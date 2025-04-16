@@ -33,7 +33,28 @@ export const PUBMED_CONFIG = {
  * 
  * Learn more: https://www.nlm.nih.gov/bsd/aim.html
  */
-export const CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]";
+/**
+ * Clinically Useful Journals (CUJ) filter - Updated 2023
+ * 
+ * This filter restricts search results to 241 journals identified as having high clinical utility
+ * based on a data-driven approach documented in the Journal of the Medical Library Association.
+ * 
+ * Reference: Klein-Fedyshin M, Ketchum AM. PubMed's core clinical journals filter: redesigned 
+ * for contemporary clinical impact and utility. J Med Libr Assoc. 2023;111(3):665-676.
+ * 
+ * The full list of journals is available in data/clinically-useful-journals.json
+ */
+export const CORE_CLINICAL_JOURNALS_FILTER = "ncbijournals[All Fields]"; // TODO: Replace with CUJ journals query
+
+/**
+ * Cardiology Journals filter
+ * 
+ * This filter restricts search results to high-impact cardiology-specific journals
+ * to improve the relevance of cardiovascular medicine searches.
+ * 
+ * The full list of journals is available in data/cardiology-journals.json
+ */
+export const CARDIOLOGY_JOURNALS_FILTER = "(\"JAMA Cardiol\"[Journal] OR \"Circulation\"[Journal] OR \"Eur Heart J\"[Journal] OR \"J Am Coll Cardiol\"[Journal] OR \"Heart\"[Journal])";
 
 export const AGE_MAP = {
   "Newborn: Birth-1 month": "infant, newborn[mh]",
@@ -79,4 +100,6 @@ export const DEFAULT_FILTER = {
   OR Multicenter Study[pt] OR Observational Study[pt] OR Practice Guideline[pt]
   OR Randomized Controlled Trial[pt] OR Review[pt] OR Systematic Review[pt]
 ) AND English[Language]`,
+  
+  broad: `((clinical[Title/Abstract] AND trial[Title/Abstract]) OR clinical trials as topic[MeSH Terms] OR clinical trial[Publication Type] OR random*[Title/Abstract] OR random allocation[MeSH Terms] OR therapeutic use[MeSH Subheading]) AND English[Language]`
 } as const;

@@ -2,6 +2,7 @@ import { ProcessedBlueprint, QueryFilters } from "../types";
 import {
   DEFAULT_FILTER,
   CORE_CLINICAL_JOURNALS_FILTER,
+  CARDIOLOGY_JOURNALS_FILTER
 } from "../config/pubmed-config";
 import { Logger } from "../utils/logger";
 
@@ -25,11 +26,17 @@ class QueryService {
         blueprint.filters.year_range || 2
       } years"[PDat]`;
 
-      // Use Core Clinical Journals filter
-      const journalFilter = CORE_CLINICAL_JOURNALS_FILTER;
+      // Determine the appropriate journal filter based on specialty
+      let journalFilter = CORE_CLINICAL_JOURNALS_FILTER;
+
+      // For now, we just implement a cardiology-specific filter as an example
+      // This could be expanded to look up specialty-specific filters from a config file
+      if (blueprint.specialty && blueprint.specialty.toLowerCase() === 'cardiology') {
+        journalFilter = CARDIOLOGY_JOURNALS_FILTER;
+      }
 
       // Combine the parts - always wrap components in parentheses for safety
-      const query = `(${searchTerm}) AND (${DEFAULT_FILTER.narrow}) AND (${dateFilter}) AND (${journalFilter})`;
+      const query = `(${searchTerm}) AND (${DEFAULT_FILTER.broad}) AND (${dateFilter}) AND (${journalFilter})`;
 
       Logger.debug(
         "QueryService",
