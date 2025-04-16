@@ -3,7 +3,7 @@ import QueryService from "./query-service";
 import PubmedService from "./pubmed-service";
 import EmbeddingService from "./embedding.service";
 import JournalRankingService from "./journal-ranking.service";
-import { ArticleRequest, ArticleResponse } from "../types";
+import { ArticleRequest, ArticleResponse, Article } from "../types";
 import { Logger } from "../utils/logger";
 
 /**

@@ -69,6 +69,7 @@ export interface Article {
     relevance: number;
     journal_impact: number;
   };
+  mesh_terms?: string[];  // MeSH terms associated with the article
   full_text?: string;  // Full text content fetched from DOI or PubMed
   methods?: string;
   results?: string;

@@ -151,6 +151,23 @@ class PubmedService {
         
         const abstract = abstractParts.join(' ');
         
+        // Extract MeSH Terms
+        const meshTerms: string[] = [];
+        const meshHeadingNodes = articleNode.getElementsByTagName('MeshHeading');
+        
+        for (let j = 0; j < meshHeadingNodes.length; j++) {
+          const meshNode = meshHeadingNodes.item(j);
+          if (!meshNode) continue;
+          
+          const descriptorNode = meshNode.getElementsByTagName('DescriptorName').item(0);
+          if (descriptorNode) {
+            const meshTerm = descriptorNode.textContent;
+            if (meshTerm) {
+              meshTerms.push(meshTerm);
+            }
+          }
+        }
+        
         // Build article URL
         const url = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
         
@@ -163,6 +180,7 @@ class PubmedService {
           pub_date: pubDate,
           abstract,
           url,
+          mesh_terms: meshTerms.length > 0 ? meshTerms : undefined,
           scores: {
             relevance: 0, // To be calculated later
             journal_impact: 0, // To be calculated later

@@ -105,7 +105,7 @@ export const DEFAULT_FILTER = {
   Clinical Trial[pt] OR Controlled Clinical Trial[pt] OR Meta-Analysis[pt]
   OR Multicenter Study[pt] OR Observational Study[pt] OR Practice Guideline[pt]
   OR Randomized Controlled Trial[pt] OR Review[pt] OR Systematic Review[pt]
-) AND English[Language] AND humans[mh] AND free full text[Filter] `,
+) AND (English[Language] AND humans[mh] AND free full text[Filter] AND hasabstract) `,
 
   broad: `((clinical[Title/Abstract] AND trial[Title/Abstract]) OR clinical trials as topic[MeSH Terms] OR clinical trial[Publication Type] OR random*[Title/Abstract] OR random allocation[MeSH Terms] OR therapeutic use[MeSH Subheading]) AND English[Language]`,
 } as const;
