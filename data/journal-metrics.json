@@ -19,21 +19,6 @@
     "h_index": 580,
     "sjr_score": 7.79
   },
-  "Annals of Internal Medicine": {
-    "impact_factor": 25.391,
-    "h_index": 418,
-    "sjr_score": 9.19
-  },
-  "Nature Medicine": {
-    "impact_factor": 53.44,
-    "h_index": 512,
-    "sjr_score": 17.85
-  },
-  "JAMA Internal Medicine": {
-    "impact_factor": 21.87,
-    "h_index": 305,
-    "sjr_score": 8.23
-  },
   "PLOS Medicine": {
     "impact_factor": 11.069,
     "h_index": 256,
@@ -90,7 +75,7 @@
     "sjr_score": 7.84
   },
   "Annals of the Rheumatic Diseases": {
-    "impact_factor": 19.10,
+    "impact_factor": 19.1,
     "h_index": 258,
     "sjr_score": 7.47
   },
@@ -105,17 +90,17 @@
     "sjr_score": 9.95
   },
   "JAMA Oncology": {
-    "impact_factor": 24.80,
+    "impact_factor": 24.8,
     "h_index": 154,
     "sjr_score": 11.14
   },
   "JAMA Neurology": {
-    "impact_factor": 18.30,
+    "impact_factor": 18.3,
     "h_index": 179,
     "sjr_score": 8.52
   },
   "JAMA Cardiology": {
-    "impact_factor": 15.80,
+    "impact_factor": 15.8,
     "h_index": 121,
     "sjr_score": 8.89
   },
@@ -130,7 +115,7 @@
     "sjr_score": 9.63
   },
   "Cancer Discovery": {
-    "impact_factor": 39.40,
+    "impact_factor": 39.4,
     "h_index": 175,
     "sjr_score": 17.92
   },
@@ -148,5 +133,40 @@
     "impact_factor": 25.07,
     "h_index": 253,
     "sjr_score": 12.29
+  },
+  "Annals of Internal Medicine": {
+    "impact_factor": 25.391,
+    "h_index": 418,
+    "sjr_score": 9.19
+  },
+  "JAMA Internal Medicine": {
+    "impact_factor": 21.87,
+    "h_index": 305,
+    "sjr_score": 8.23
+  },
+  "American Journal of Medicine": {
+    "impact_factor": 6.745,
+    "h_index": 198,
+    "sjr_score": 2.85
+  },
+  "Journal of General Internal Medicine": {
+    "impact_factor": 5.128,
+    "h_index": 143,
+    "sjr_score": 2.37
+  },
+  "Mayo Clinic Proceedings": {
+    "impact_factor": 12.213,
+    "h_index": 225,
+    "sjr_score": 3.91
+  },
+  "The American Journal of Medicine Sciences": {
+    "impact_factor": 2.965,
+    "h_index": 108,
+    "sjr_score": 1.12
+  },
+  "BMC Internal Medicine": {
+    "impact_factor": 3.84,
+    "h_index": 94,
+    "sjr_score": 1.21
   }
 }
