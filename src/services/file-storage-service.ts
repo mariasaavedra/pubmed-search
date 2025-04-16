@@ -30,7 +30,7 @@ class FileStorageService {
       await fs.mkdir(this.outputDir, { recursive: true });
 
       const result: SavedSearchResult = {
-        clinical_category: blueprint.filters.study_types[0] as any, // Will be validated by type
+        clinical_category: blueprint.filters.clinical_queries[0] as any, // Will be validated by type
         clinical_scope: "narrow", // Using narrow scope as default per config
         esearch_query: query,
         article_count: totalCount,
@@ -79,7 +79,7 @@ class FileStorageService {
     const components = [
       sanitize(blueprint.topics[0]),
       sanitize(blueprint.specialty),
-      sanitize(blueprint.filters.study_types[0]),
+      sanitize(blueprint.filters.clinical_queries[0]),
       "narrow",
       timestamp
     ];

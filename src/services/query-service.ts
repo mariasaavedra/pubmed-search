@@ -64,8 +64,8 @@ class QueryService {
     const filter_parts: string[] = [];
 
     // Apply study type filters
-    if (filters.study_types && filters.study_types.length > 0) {
-      const study_filters = filters.study_types
+    if (filters.clinical_queries && filters.clinical_queries.length > 0) {
+      const study_filters = filters.clinical_queries
         .filter(type => FILTER_MAP[type as keyof typeof FILTER_MAP])
         .map(type => FILTER_MAP[type as keyof typeof FILTER_MAP].broad);
       

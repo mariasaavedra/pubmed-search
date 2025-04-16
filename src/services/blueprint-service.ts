@@ -39,14 +39,14 @@ class BlueprintService {
     }
 
     // Set default filters if not provided, or use the provided ones
-    const study_types = request.filters?.study_types || 
+    const clinical_queries = request.filters?.clinical_queries || 
       this.specialties[normalized_specialty].default_filters;
     
     const blueprint: ProcessedBlueprint = {
       specialty: normalized_specialty,
       topics: normalized_topics,
       filters: {
-        study_types,
+        clinical_queries,
         age_group: request.filters?.age_group,
         year_range: request.filters?.year_range || 3 // Default to last 3 years
       }

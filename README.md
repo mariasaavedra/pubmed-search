@@ -187,7 +187,7 @@ POST /api/articles
 "specialty": "cardiology",
 "topics": ["heart failure", "hypertension"],
 "filters": {
-"study_types": ["Therapy", "Diagnosis"],
+"clinical_queries": ["Therapy", "Diagnosis"],
 "year_range": 5
 },
 "page": 1,

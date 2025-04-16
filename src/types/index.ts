@@ -26,7 +26,7 @@ export interface ArticleRequest {
   specialty: string;
   topics: string[];
   filters?: {
-    study_types?: string[];
+    clinical_queries?: string[];
     age_group?: string;
     year_range?: number;
   };
@@ -162,7 +162,7 @@ export interface ProcessedBlueprint {
   specialty: string;
   topics: string[];
   filters: {
-    study_types: string[];
+    clinical_queries: string[];
     age_group?: string;
     year_range: number;
   };
@@ -193,7 +193,7 @@ export interface RankedArticleData extends ParsedArticleData {
 }
 
 export interface QueryFilters {
-  study_types: string[];
+  clinical_queries: string[];
   age_group?: string;
   year_range: number;
 }
