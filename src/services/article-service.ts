@@ -138,7 +138,7 @@ class ArticleService {
   /**
    * Get all available specialties
    */
-  public getSpecialties(): { specialties: string[] } {
+  public getSpecialties(): { specialties: string[], raw: Record<string, any> } {
     Logger.debug("ArticleService", "Getting all available specialties");
     const specialties = this.blueprint_service.getSpecialties();
     const specialty_list = Object.keys(specialties);
@@ -147,6 +147,7 @@ class ArticleService {
 
     return {
       specialties: specialty_list,
+      raw: specialties,
     };
   }
 }

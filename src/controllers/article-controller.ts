@@ -161,7 +161,19 @@ class ArticleController {
         page,
         limit,
       });
-      res.json(result);
+      res.json({
+        ...result,
+        metadata: {
+          specialty: req.body.specialty,
+          topics,
+          filters: {
+            clinical_queries: ["Therapy", "Diagnosis"],
+            year_range: 2,
+          },
+          page,
+          limit,
+        },
+      });
     } catch (error) {
       Logger.error(
         "ArticleController",

@@ -1,5 +1,6 @@
 {
   "cardiology": {
+    "name": "cardiology",
     "common_topics": [
       "Acute coronary syndrome",
       "Myocardial infarction",
@@ -117,7 +118,8 @@
     ],
     "default_filters": ["Therapy", "Diagnosis", "Prognosis"]
   },
-  "internal_medicine": {
+  "internal medicine": {
+    "name": "internal medicine",
     "common_topics": [
       "Hypertension management",
       "Type 2 diabetes mellitus",

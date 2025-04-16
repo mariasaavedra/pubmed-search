@@ -102,10 +102,10 @@ class QueryService {
   /**
    * Apply filters to the query
    * @param filters Query filters
-   * @param filterScope Whether to use 'broad' or 'narrow' filter scope (defaults to 'broad' for better recall)
+   * @param filterScope Whether to use 'broad' or 'narrow' filter scope (defaults to 'narrow' for better results)
    * @returns Filter query string
    */
-  public applyFilters(filters: QueryFilters, filterScope: 'broad' | 'narrow' = 'broad'): string {
+  public applyFilters(filters: QueryFilters, filterScope: 'broad' | 'narrow' = 'narrow'): string {
     const filter_parts: string[] = [];
 
     // PubMed best practices: always add English language filter and publication types
@@ -136,7 +136,7 @@ class QueryService {
     }
 
     // Apply date range filter
-    const year_range = filters.year_range || 3;
+    const year_range = filters.year_range || 2;
     filter_parts.push(`"last ${year_range} years"[PDat]`);
 
     // Log the constructed filter query for debugging
