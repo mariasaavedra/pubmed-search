@@ -1,0 +1,818 @@
+# PubMed Clinical Article Retriever - Complete Documentation
+
+This file provides comprehensive documentation for libraries and APIs used in the PubMed Clinical Article Retriever project, including code examples from the actual project implementation.
+
+## Core APIs
+
+### PubMed E-Utilities API
+> NCBI's Entrez Programming Utilities (E-utilities) provide programmatic access to the PubMed database and other NCBI resources. Our application uses these APIs to search, retrieve, and process medical literature.
+
+**Important Resources:**
+- [Main API Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25497/)
+- [Getting Started Guide](https://www.ncbi.nlm.nih.gov/books/NBK25500/)
+- [API Endpoints Reference](https://www.ncbi.nlm.nih.gov/books/NBK25499/)
+- [Rate Limits & API Key Instructions](https://www.ncbi.nlm.nih.gov/account/settings/)
+
+**API Endpoints Used:**
+- **ESearch**: Search Entrez databases by term
+- **ESummary**: Get document summaries
+- **EFetch**: Download full data records
+- **ELink**: Get linked data (citations, related articles)
+- **ESpell**: Get spelling suggestions
+
+**Rate Limits:**
+- With API Key: 10 requests/second
+- Without API Key: 3 requests/second
+
+**Implementation in Our Project:**
+Our E-utilities service (src/services/e-utilities.service.ts) provides a strongly-typed wrapper around the PubMed API:
+
+```typescript
+// Excerpt from src/services/e-utilities.service.ts
+import axios, { AxiosRequestConfig } from 'axios';
+import { DOMParser as XMLDOMParser, Document as XMLDocument } from '@xmldom/xmldom';
+import { PUBMED_CONFIG } from '../config/pubmed-config';
+import RateLimiter from '../utils/rate-limiter';
+
+export class EUtilitiesService {
+  private baseUrl: string;
+  private apiKey: string | undefined;
+  private rateLimiter: RateLimiter;
+  private appName: string = 'PubmedSearchApp';
+  private contactEmail: string;
+  private xmlParser: XMLDOMParser;
+
+  constructor(contactEmail: string) {
+    this.baseUrl = PUBMED_CONFIG.base_url;
+    this.apiKey = process.env.PUBMED_API_KEY;
+    this.contactEmail = contactEmail;
+    this.xmlParser = new XMLDOMParser();
+    
+    // Initialize rate limiter based on API key presence
+    const hasApiKey = !!this.apiKey;
+    const rateConfig = hasApiKey 
+      ? {
+          maxConcurrent: PUBMED_CONFIG.rate_limit.with_api_key.max_concurrent,
+          minTime: PUBMED_CONFIG.rate_limit.min_time_with_key
+        }
+      : {
+          maxConcurrent: PUBMED_CONFIG.rate_limit.without_api_key.max_concurrent,
+          minTime: PUBMED_CONFIG.rate_limit.min_time_without_key
+        };
+    this.rateLimiter = new RateLimiter(rateConfig.maxConcurrent, rateConfig.minTime);
+  }
+  
+  // Example of search implementation
+  public async esearch(params: Partial<ESearchParams>): Promise<ESearchResponse> {
+    const fullParams = this.addCommonParams<ESearchParams>({
+      db: 'pubmed',
+      ...params,
+    });
+    
+    return this.executeRequest<ESearchResponse>(
+      PUBMED_CONFIG.esearch, 
+      fullParams
+    );
+  }
+  
+  // Example of fetch implementation
+  public async efetch(params: Partial<EFetchParams>): Promise<string> {
+    const fullParams = this.addCommonParams<EFetchParams>({
+      db: 'pubmed',
+      ...params,
+    });
+    
+    return this.executeRequest<string>(
+      PUBMED_CONFIG.efetch, 
+      fullParams,
+      { responseType: 'text' }
+    );
+  }
+}
+```
+
+**Usage Example from PubmedService:**
+```typescript
+// Excerpt from src/services/pubmed-service.ts
+public async searchArticles(
+  query: string,
+  page: number = 1,
+  limit: number = PUBMED_CONFIG.page_size
+): Promise<string[]> {
+  try {
+    // Calculate pagination parameters
+    const retmax = Math.min(Math.max(1, limit), 100); // Between 1-100
+    const retstart = (Math.max(1, page) - 1) * retmax;
+
+    // Use ESearch to find articles
+    const searchResults = await this.eutils.esearch({
+      term: query,
+      retmode: "json",
+      retmax,
+      retstart
+    });
+
+    // Extract article IDs
+    return searchResults.esearchresult.idlist || [];
+  } catch (error) {
+    Logger.error("PubmedService", "Error searching PubMed", error);
+    throw new Error("Failed to search articles on PubMed");
+  }
+}
+```
+
+### OpenAI API
+> The OpenAI API provides access to machine learning models for text processing and embedding generation. Our application uses the embeddings API to rank articles by semantic relevance.
+
+**Important Resources:**
+- [API Documentation](https://platform.openai.com/docs/api-reference)
+- [Embeddings API Guide](https://platform.openai.com/docs/guides/embeddings)
+- [Node.js SDK](https://github.com/openai/openai-node)
+
+**Implementation in Our Project:**
+We use the OpenAI API to generate embeddings for ranking articles by semantic relevance:
+
+```typescript
+// Excerpt from src/services/embedding.service.ts
+import { OpenAI } from 'openai';
+import { Article } from '../types';
+
+class EmbeddingService {
+  private openai: OpenAI;
+  
+  constructor() {
+    // Initialize OpenAI client
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+    
+    Logger.debug("EmbeddingService", "Initialized with OpenAI API");
+  }
+  
+  // Get embedding for a single string
+  private async getEmbedding(text: string): Promise<number[]> {
+    try {
+      const response = await this.openai.embeddings.create({
+        model: "text-embedding-3-small",
+        input: text,
+        dimensions: 1536 // Default dimension for the model
+      });
+      
+      return response.data[0].embedding;
+    } catch (error) {
+      Logger.error('EmbeddingService', 'Error getting embedding', error);
+      throw error;
+    }
+  }
+  
+  // Rank articles by semantic similarity to the query
+  public async rankArticlesByRelevance(
+    query: string, 
+    articles: Article[]
+  ): Promise<Article[]> {
+    try {
+      // Get query embedding
+      const queryEmbedding = await this.getEmbedding(query);
+      
+      // Get article embeddings
+      const articleContents = articles.map(article => {
+        return article.full_text || `${article.title}. ${article.abstract}`;
+      });
+      
+      const articleEmbeddings = await this.getEmbeddings(articleContents);
+      
+      // Calculate similarities
+      const scoredArticles = articles.map((article, index) => {
+        const similarity = this.cosineSimilarity(
+          queryEmbedding, 
+          articleEmbeddings[index]
+        );
+        
+        return {
+          ...article,
+          scores: {
+            ...article.scores,
+            relevance: similarity
+          }
+        };
+      });
+      
+      // Sort by relevance score (highest first)
+      return scoredArticles.sort((a, b) => 
+        b.scores.relevance - a.scores.relevance
+      );
+    } catch (error) {
+      Logger.error('EmbeddingService', 'Error ranking articles', error);
+      return articles;
+    }
+  }
+}
+```
+
+## XML & HTML Processing
+
+### @xmldom/xmldom
+> A pure JavaScript W3C standard-based XML DOM parser and serializer, used to process XML responses from the PubMed API.
+
+**Important Resources:**
+- [npm Package](https://www.npmjs.com/package/@xmldom/xmldom)
+- [GitHub Repository](https://github.com/xmldom/xmldom)
+- [API Reference](https://www.npmjs.com/package/@xmldom/xmldom#api-reference)
+
+**Implementation in Our Project:**
+We use xmldom to parse XML responses from the PubMed API:
+
+```typescript
+// Excerpt from src/services/e-utilities.service.ts
+import { DOMParser as XMLDOMParser, Document as XMLDocument } from '@xmldom/xmldom';
+
+export class EUtilitiesService {
+  private xmlParser: XMLDOMParser;
+
+  constructor(contactEmail: string) {
+    this.xmlParser = new XMLDOMParser();
+    // ... other initialization code
+  }
+
+  // Parse XML response to Document
+  public parseXML(xmlString: string): XMLDocument {
+    return this.xmlParser.parseFromString(xmlString, 'text/xml');
+  }
+  
+  // EFetch with XML parsing
+  public async efetchXML(params: Partial<EFetchParams>): Promise<XMLDocument> {
+    const xml = await this.efetch({
+      ...params,
+      retmode: 'xml'
+    });
+    
+    return this.parseXML(xml);
+  }
+}
+```
+
+**Example from PubmedService:**
+```typescript
+// Excerpt from src/services/pubmed-service.ts
+private extractArticleFromXML(xmlDoc: XMLDocument): Article[] {
+  try {
+    const articles: Article[] = [];
+    const articleNodes = xmlDoc.getElementsByTagName('PubmedArticle');
+    
+    for (let i = 0; i < articleNodes.length; i++) {
+      const articleNode = articleNodes.item(i);
+      if (!articleNode) continue;
+      
+      // Extract PMID
+      const pmidNode = articleNode.getElementsByTagName('PMID').item(0);
+      const pmid = pmidNode?.textContent || '';
+      
+      // Extract article title
+      const titleNode = articleNode.getElementsByTagName('ArticleTitle').item(0);
+      const title = titleNode?.textContent || '';
+      
+      // ... other extraction code
+      
+      // Create article object
+      articles.push({
+        pmid,
+        title,
+        authors: authorNames,
+        journal,
+        pub_date: pubDate,
+        abstract,
+        url,
+        mesh_terms: meshTerms.length > 0 ? meshTerms : undefined,
+        scores: {
+          relevance: 0,
+          journal_impact: 0,
+        }
+      });
+    }
+    
+    return articles;
+  } catch (error) {
+    throw new Error("Failed to extract article data from PubMed XML");
+  }
+}
+```
+
+### jsdom
+> A JavaScript implementation of the DOM and HTML standards for use in Node.js, allowing DOM manipulation and HTML parsing outside of a browser environment.
+
+**Important Resources:**
+- [GitHub Repository](https://github.com/jsdom/jsdom)
+- [npm Package](https://www.npmjs.com/package/jsdom)
+- [Usage Guide](https://github.com/jsdom/jsdom#basic-usage)
+
+**Implementation in Our Project:**
+We use jsdom to parse HTML content and extract article text from web pages:
+
+```typescript
+// Excerpt from src/services/full-text-fetcher.service.ts
+import { JSDOM, VirtualConsole } from 'jsdom';
+
+class FullTextFetcherService {
+  // ... other methods
+  
+  private extractArticleContent(html: string): string {
+    try {
+      // Create virtual console to suppress JSDOM warnings
+      const virtualConsole = new VirtualConsole();
+      virtualConsole.on('error', () => {});
+      virtualConsole.on('warn', () => {});
+      
+      // Parse HTML with JSDOM
+      const dom = new JSDOM(html, { 
+        runScripts: 'outside-only',
+        resources: 'usable',
+        virtualConsole
+      });
+      
+      const document = dom.window.document;
+      
+      // Remove non-content elements
+      document.querySelectorAll(
+        'script, style, nav, header, footer, aside, .sidebar, .advertisement'
+      ).forEach(el => el.remove());
+      
+      // Find main content element
+      const mainContent = 
+        document.querySelector('main') || 
+        document.querySelector('article') || 
+        document.querySelector('.article') || 
+        document.querySelector('.content') || 
+        document.body;
+      
+      if (!mainContent) {
+        return '';
+      }
+      
+      // Extract metadata
+      const title = document.querySelector('h1, .article-title')?.textContent?.trim() || '';
+      const abstract = document.querySelector('.abstract, #abstract')?.textContent?.trim() || '';
+      
+      // Extract main content elements
+      const contentElements = mainContent.querySelectorAll(
+        'h1, h2, h3, h4, h5, h6, p, li, blockquote, .section, .body'
+      );
+      
+      let contentText = Array.from(contentElements)
+        .map(el => el.textContent?.trim())
+        .filter(Boolean)
+        .join('\n\n');
+      
+      // Build full text with structure
+      let fullText = title ? `${title}\n\n` : '';
+      fullText += abstract ? `Abstract:\n${abstract}\n\n` : '';
+      fullText += contentText;
+      
+      return fullText;
+    } catch (error) {
+      Logger.error('FullTextFetcherService', 'Error extracting article content:', error);
+      return '';
+    }
+  }
+}
+```
+
+### xml2js
+> XML to JavaScript object converter, used as an alternative method for parsing XML.
+
+**Important Resources:**
+- [npm Package](https://www.npmjs.com/package/xml2js)
+- [GitHub Repository](https://github.com/Leonidas-from-XIV/node-xml2js)
+
+**Note:** While included in our dependencies, direct usage of xml2js is minimal as we primarily use xmldom for XML parsing.
+
+## HTTP & Networking
+
+### axios
+> Promise-based HTTP client for making API requests from Node.js and browser environments.
+
+**Important Resources:**
+- [GitHub Repository](https://github.com/axios/axios)
+- [npm Package](https://www.npmjs.com/package/axios)
+- [Request Config Options](https://axios-http.com/docs/req_config)
+- [Response Schema](https://axios-http.com/docs/res_schema)
+
+**Implementation in Our Project:**
+We use axios for making HTTP requests to the PubMed E-utilities API:
+
+```typescript
+// Excerpt from src/services/e-utilities.service.ts
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+
+export class EUtilitiesService {
+  // ... other methods
+  
+  private async executeRequest<T>(
+    endpoint: string, 
+    params: Record<string, any>, 
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const MAX_RETRIES = 3;
+    let retries = 0;
+    
+    while (true) {
+      try {
+        await this.rateLimiter.waitForSlot();
+        
+        const url = `${this.baseUrl}${endpoint}`;
+        
+        const response = await axios.get<T>(url, {
+          params,
+          ...config,
+          timeout: 30000 // 30 seconds
+        });
+        
+        return response.data;
+      } catch (error) {
+        const axiosError = error as any;
+        
+        // Handle rate limiting errors
+        if (axiosError.response && axiosError.response.status === 429) {
+          retries++;
+          if (retries <= MAX_RETRIES) {
+            const waitTime = Math.pow(2, retries) * 1000; // Exponential backoff
+            
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+        }
+        
+        // Re-throw the error with more context
+        throw new Error(`E-utilities ${endpoint} request failed: ${axiosError.message}`);
+      }
+    }
+  }
+}
+```
+
+### express
+> Fast, unopinionated, minimalist web framework for Node.js, used to build our RESTful API server.
+
+**Important Resources:**
+- [Official Website](https://expressjs.com/)
+- [API Reference](https://expressjs.com/en/4x/api.html)
+- [Router Documentation](https://expressjs.com/en/guide/routing.html)
+- [Middleware Guide](https://expressjs.com/en/guide/using-middleware.html)
+
+**Implementation in Our Project:**
+We use Express for our API server:
+
+```typescript
+// Excerpt from src/app.ts
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import articleRoutes from "./routes/article-routes";
+import { requestLogger } from "./middlewares/request-logger";
+
+// Load environment variables
+dotenv.config();
+
+// Initialize Express app
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Basic middleware
+app.use(cors());
+app.use(express.static('public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
+
+// Mount routes
+app.use(articleRoutes);
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Error handling middleware
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    Logger.error("Server", `Unhandled error: ${err.message}`, err);
+
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: process.env.NODE_ENV === "production"
+        ? "An unexpected error occurred"
+        : err.message,
+    });
+  }
+);
+
+// Start the server
+app.listen(port as number, "0.0.0.0", () => {
+  Logger.success(
+    "Server",
+    `PubMed Clinical Article Retriever API running on port ${port}`
+  );
+});
+```
+
+**Route Implementation:**
+```typescript
+// Excerpt from src/routes/article-routes.ts
+import express from "express";
+import ArticleController from "../controllers/article-controller";
+
+const router = express.Router();
+
+// Get articles based on clinical blueprint
+router.post("/api/articles", ArticleController.getArticles);
+
+// Get all available specialties
+router.get("/api/specialties", ArticleController.getSpecialties);
+
+// Get suggested topics for a specialty
+router.get("/api/specialties/:specialty/topics", ArticleController.getTopics);
+
+export default router;
+```
+
+### cors
+> Express middleware for enabling Cross-Origin Resource Sharing (CORS), making our API accessible from different domains.
+
+**Important Resources:**
+- [npm Package](https://www.npmjs.com/package/cors)
+- [Usage Examples](https://www.npmjs.com/package/cors#usage)
+
+**Implementation in Our Project:**
+```typescript
+// Excerpt from src/app.ts
+import cors from "cors";
+
+// Enable CORS for all routes
+app.use(cors());
+```
+
+### express-rate-limit
+> Basic rate-limiting middleware for Express applications, used to limit repeated requests to our API.
+
+**Important Resources:**
+- [npm Package](https://www.npmjs.com/package/express-rate-limit)
+- [Options Reference](https://www.npmjs.com/package/express-rate-limit#configuration-options)
+
+**Note:** While included in our dependencies, we currently implement custom rate limiting for PubMed API requests rather than using express-rate-limit directly.
+
+## Utilities & Infrastructure
+
+### winston
+> A versatile logging library for Node.js, used for structured logging throughout our application.
+
+**Important Resources:**
+- [GitHub Repository](https://github.com/winstonjs/winston)
+- [npm Package](https://www.npmjs.com/package/winston)
+- [API Documentation](https://github.com/winstonjs/winston#api-documentation)
+
+**Implementation in Our Project:**
+We use a custom Logger class built on top of winston:
+
+```typescript
+// Excerpt from src/utils/logger.ts
+import winston from 'winston';
+import chalk from 'chalk';
+
+export class Logger {
+  private static logger = winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    ),
+    transports: [
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.colorize(),
+          winston.format.printf(({ level, message, timestamp, ...meta }) => {
+            return `${timestamp} ${level}: ${message} ${
+              Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
+            }`;
+          })
+        ),
+      }),
+      new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+      new winston.transports.File({ filename: 'logs/combined.log' })
+    ],
+  });
+
+  public static debug(context: string, message: string, meta?: any): void {
+    this.logger.debug(`[${context}] ${message}`, meta);
+    console.debug(chalk.blue(`[${context}] ${message}`), meta || '');
+  }
+
+  public static info(context: string, message: string, meta?: any): void {
+    this.logger.info(`[${context}] ${message}`, meta);
+    console.info(chalk.green(`[${context}] ${message}`), meta || '');
+  }
+
+  public static warn(context: string, message: string, meta?: any): void {
+    this.logger.warn(`[${context}] ${message}`, meta);
+    console.warn(chalk.yellow(`[${context}] ${message}`), meta || '');
+  }
+
+  public static error(context: string, message: string, meta?: any): void {
+    this.logger.error(`[${context}] ${message}`, meta);
+    console.error(chalk.red(`[${context}] ${message}`), meta || '');
+  }
+
+  public static success(context: string, message: string, meta?: any): void {
+    this.logger.info(`[${context}] ${message}`, meta);
+    console.info(chalk.green.bold(`[${context}] ${message}`), meta || '');
+  }
+}
+```
+
+### dotenv
+> Module for loading environment variables from a .env file into process.env, simplifying configuration management.
+
+**Important Resources:**
+- [npm Package](https://www.npmjs.com/package/dotenv)
+- [GitHub Repository](https://github.com/motdotla/dotenv)
+- [Usage Guide](https://www.npmjs.com/package/dotenv#usage)
+
+**Implementation in Our Project:**
+```typescript
+// Excerpt from src/app.ts
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
+
+// Access environment variables
+const port = process.env.PORT || 3000;
+const hasApiKey = !!process.env.PUBMED_API_KEY;
+```
+
+**Environment Variables Used:**
+- `PORT`: Server port (default: 3000)
+- `PUBMED_API_KEY`: NCBI API key for higher rate limits
+- `OPENAI_API_KEY`: OpenAI API key for embeddings
+- `NODE_ENV`: Environment mode (development/production)
+- `LOG_LEVEL`: Winston logging level
+
+### memory-cache
+> Simple in-memory caching library for Node.js, used to cache API responses and reduce redundant requests.
+
+**Important Resources:**
+- [npm Package](https://www.npmjs.com/package/memory-cache)
+- [API Methods](https://www.npmjs.com/package/memory-cache#api)
+
+**Note:** While included in our dependencies, direct usage examples are minimal in the current codebase.
+
+## Development Tools
+
+### typescript
+> TypeScript is a typed superset of JavaScript that compiles to plain JavaScript, adding static typing to improve code quality and maintainability.
+
+**Important Resources:**
+- [Official Website](https://www.typescriptlang.org/)
+- [Documentation](https://www.typescriptlang.org/docs/)
+- [Type Reference](https://www.typescriptlang.org/docs/handbook/2/types-from-types.html)
+
+**Implementation in Our Project:**
+We use TypeScript throughout our project for type safety:
+
+```typescript
+// Example of type definitions from src/types/index.ts
+export interface Article {
+  pmid: string;
+  title: string;
+  authors: string[];
+  journal: string;
+  pub_date: string;
+  abstract: string;
+  url: string;
+  scores: {
+    relevance: number;
+    journal_impact: number;
+  };
+  mesh_terms?: string[];
+  full_text?: string;
+  methods?: string;
+  results?: string;
+  discussion?: string;
+  conclusion?: string;
+  figures?: string[];
+  tables?: string[];
+  supplementary_material?: string[];
+  original_xml?: string;
+  sanitized_html?: string;
+}
+
+export interface ArticleRequest {
+  specialty: string;
+  topics?: string[];
+  filters?: {
+    clinical_queries?: string[];
+    age_group?: string;
+    year_range?: number;
+  };
+  page?: number;
+  limit?: number;
+}
+
+export interface ArticleResponse {
+  articles: Article[];
+  meta: {
+    total: number;
+    processing_time: number;
+    saved_filename: string;
+    encoding?: {
+      tables: "base64";
+      original_xml: "base64";
+      sanitized_html: "base64";
+    };
+  };
+}
+```
+
+**Project Configuration:**
+```json
+// Excerpt from tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "lib": ["es2017", "dom"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts"]
+}
+```
+
+### jest
+> JavaScript testing framework focused on simplicity and support for large web applications, used for unit and integration testing.
+
+**Important Resources:**
+- [Official Website](https://jestjs.io/)
+- [API Reference](https://jestjs.io/docs/api)
+- [Using with TypeScript](https://jestjs.io/docs/getting-started#using-typescript)
+
+**Note:** While included in our dependencies, test files are not extensively documented in the current codebase.
+
+### ts-node
+> TypeScript execution engine for Node.js, allowing direct execution of TypeScript files without a separate compilation step.
+
+**Important Resources:**
+- [GitHub Repository](https://github.com/TypeStrong/ts-node)
+- [npm Package](https://www.npmjs.com/package/ts-node)
+
+**Implementation in Our Project:**
+Used in our development scripts:
+
+```json
+// Excerpt from package.json
+{
+  "scripts": {
+    "start": "node dist/app.js",
+    "dev": "ts-node-dev --respawn src/app.ts",
+    "build": "tsc",
+    "test": "jest"
+  }
+}
+```
+
+## Project Structure and Architecture
+
+The PubMed Clinical Article Retriever is organized using a modular, service-oriented architecture:
+
+- **Controllers**: Handle HTTP requests and responses
+- **Services**: Implement core business logic and external API interactions
+- **Utils**: Provide helper functions and utilities
+- **Types**: Define TypeScript interfaces and types
+- **Routes**: Define API endpoint routing
+- **Config**: Store application configuration
+- **Middleware**: Implement Express middleware
+
+### Key Components:
+
+1. **E-utilities Service**: Communicates with PubMed API
+2. **PubMed Service**: Handles article search and retrieval
+3. **Article Service**: Orchestrates the article retrieval process
+4. **Blueprint Service**: Processes clinical blueprints
+5. **Query Service**: Constructs optimized PubMed search queries
+6. **Embedding Service**: Ranks articles by semantic relevance
+7. **Journal Ranking Service**: Scores articles based on journal quality
+8. **Full-Text Fetcher Service**: Retrieves complete article content when available
+
+For more details on the overall architecture and usage instructions, see the project README.md.

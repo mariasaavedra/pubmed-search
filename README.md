@@ -15,18 +15,24 @@ This application serves as a backend service that:
 
 - NodeJS
 - npm or yarn
+- NCBI API Key (optional but recommended)
+- OpenAI API Key (for embedding-based relevance ranking)
 
 ## Configuration
 
-See pubmed.config.js for API keys and settings.
+See `src/config/pubmed-config.ts` for API keys and settings.
 
 Files of importance:
 
 - `article-controller.ts`: Handles API requests and responses.
+- `e-utilities.service.ts`: Strongly-typed wrapper for NCBI E-utilities API.
 - `pubmed-service.ts`: Interacts with the PubMed API.
-- `pubmed.config.js`: Configuration for PubMed API keys and settings.
-- `specialties.json`: Contains specialty-specific topics and MeSH terms.
-- `journal-metrics.json`: Contains journal impact factors and metrics.
+- `embedding.service.ts`: Handles semantic ranking using OpenAI embeddings.
+- `full-text-fetcher.service.ts`: Retrieves full-text content where available.
+- `journal-ranking.service.ts`: Scores articles based on journal quality.
+- `pubmed-config.ts`: Configuration for PubMed API keys and settings.
+- `data/specialties.json`: Contains specialty-specific topics and MeSH terms.
+- `data/clinically-useful-journals.json`: Contains high-quality journal list.
 
 ## Usage
 
@@ -81,6 +87,7 @@ interface ArticleResponse {
   meta: {
     total: number;
     processing_time: number;
+    saved_filename: string;
     encoding?: {
       tables: "base64";
       original_xml: "base64";
@@ -129,18 +136,15 @@ interface Article {
       "url": "https://pubmed.ncbi.nlm.nih.gov/35123456/",
       "scores": {
         "relevance": 0.95,
-        "journal_impact": 0.88
+        "journal_impact": 1.0
       },
-      "full_text": "...",
-      "methods": "...",
-      "results": "...",
-      "discussion": "...",
-      "conclusion": "..."
+      "full_text": "..."
     }
   ],
   "meta": {
     "total": 42,
     "processing_time": 1240,
+    "saved_filename": "",
     "encoding": {
       "tables": "base64",
       "original_xml": "base64",
@@ -180,27 +184,38 @@ Returns suggested topics for a specific specialty.
 ```
 pubmed-search/
 ├── data/
-│   ├── specialties.json      # Specialty data with topics and MeSH terms
-│   └── journal-metrics.json  # Journal impact factors and metrics
+│   ├── specialties.json             # Specialty data with topics and MeSH terms
+│   ├── clinically-useful-journals.json # List of high-quality medical journals
+│   └── cardiology-journals.json     # Specialty-specific journal list
 ├── src/
-│   ├── app.ts                # Main Express application
+│   ├── app.ts                       # Main Express application
 │   ├── config/
-│   │   └── pubmed-config.ts  # PubMed API configuration
+│   │   └── pubmed-config.ts         # PubMed API configuration
 │   ├── controllers/
 │   │   └── article-controller.ts
+│   ├── data/
+│   │   └── journals.ts              # Journal data handling
 │   ├── routes/
 │   │   └── article-routes.ts
 │   ├── services/
-│   │   ├── blueprint-service.ts   # Blueprint processing
-│   │   ├── pubmed-service.ts      # PubMed API interaction
-│   │   ├── query-service.ts       # Query construction
-│   │   └── ranking-service.ts     # Article scoring and ranking
+│   │   ├── article-service.ts       # Main service orchestration
+│   │   ├── blueprint-service.ts     # Blueprint processing
+│   │   ├── e-utilities.service.ts   # NCBI E-utilities API wrapper
+│   │   ├── embedding.service.ts     # OpenAI embedding for relevance ranking
+│   │   ├── full-text-fetcher.service.ts # Content retrieval service
+│   │   ├── journal-ranking.service.ts # Journal quality scoring 
+│   │   ├── pubmed-service.ts        # PubMed API interaction
+│   │   └── query-service.ts         # Query construction
 │   ├── types/
-│   │   └── index.ts               # TypeScript interfaces
+│   │   ├── index.ts                 # Core TypeScript interfaces
+│   │   └── e-utilities.types.ts     # E-utilities specific types
 │   └── utils/
-│       ├── file-reader.ts         # JSON data loading
-│       ├── mesh-mapper.ts         # MeSH term mapping
-│       └── rate-limiter.ts        # API rate limiting
+│       ├── article-content-extractor.ts # Article content extraction
+│       ├── content-processor.ts     # Content formatting and processing
+│       ├── file-reader.ts           # JSON data loading
+│       ├── logger.ts                # Custom logging utility
+│       ├── mesh-mapper.ts           # MeSH term mapping
+│       └── rate-limiter.ts          # API rate limiting
 ├── tsconfig.json
 └── package.json
 ```
@@ -215,13 +230,25 @@ Processes clinical blueprints and extracts key concepts for search.
 
 Constructs optimized PubMed queries using MeSH terms and proximity operators.
 
+### E-Utilities Service
+
+Strongly-typed wrapper for the NCBI E-utilities API, handling rate limiting and error recovery.
+
 ### PubMed Service
 
 Handles communication with the E-utilities API, including rate limiting and pagination.
 
-### Ranking Service
+### Embedding Service
 
-Scores articles based on relevance, journal quality, and structural characteristics.
+Uses OpenAI embeddings to calculate semantic similarity between queries and articles.
+
+### Full-Text Fetcher Service
+
+Attempts to retrieve full-text content for articles where available, enhancing the quality of relevance scoring.
+
+### Journal Ranking Service
+
+Scores articles based on journal quality using a curated list of clinically useful journals.
 
 ## Examples
 
@@ -252,47 +279,61 @@ AND
 ## Performance Considerations
 
 - Uses connection pooling for E-utilities API
-- Implements proper rate limiting (3 requests/second)
+- Implements proper rate limiting (10 requests/second with API key, 3 without)
 - Caches MeSH term mappings to reduce API calls
 - Batches article metadata retrieval
+- Implements exponential backoff for rate limit errors
+- Optimizes semantic search with batched embedding requests
 
-## Extending the Service
+## PubMed API Rate Limiting
 
-### Adding Custom Scoring Algorithms
+This application implements NCBI's E-utilities API guidelines:
 
-Create a new scoring module in `src/services/ranking/` and register it in `ranking.service.js`.
+- **With API key**: Up to 10 requests/second
+- **Without API key**: Limited to 3 requests/second
+- All requests include tool name and contact email
+- Request throttling with configurable concurrency limits
+- Automatic retry with exponential backoff
 
-### Supporting New Specialties
+Set your NCBI API key in the `.env` file:
 
-Update the specialty-specific configurations in `config/specialties/`.
+```
+PUBMED_API_KEY=your_api_key_here
+```
 
-## Features Implemented
+## Semantic Relevance Ranking
 
-### Core Features
+The service uses OpenAI's text-embedding-3-small model to calculate semantic similarity between:
+- The user's query (specialty + topics)
+- Article content (full text when available, or title + abstract)
 
-- **Blueprint Processing**: Normalizes and validates specialty and topic inputs, handling aliases and applying default filters when needed.
-- **Query Construction**: Builds optimized PubMed search queries using MeSH terms, filters, and date ranges.
-- **PubMed API Integration**: Interacts with PubMed's E-utilities API with proper rate limiting and pagination.
-- **Article Ranking**: Scores articles based on relevance to the search topics and journal quality metrics.
+Set your OpenAI API key in the `.env` file:
 
-### RESTful API
+```
+OPENAI_API_KEY=your_openai_api_key_here
+```
 
-- **POST /api/articles**: Retrieve articles based on specialty and topics
-- **GET /api/specialties**: Get all available specialties
-- **GET /api/specialties/:specialty/topics**: Get suggested topics for a specialty
+## Journal Quality Scoring
 
-### Type-Safe Implementation
+Articles are scored based on journal quality using:
+- A curated list of clinically useful journals
+- Normalized name matching to handle variations in journal name formatting
+- Two-tier scoring (1.0 for clinically useful journals, 0.1 for others)
 
-- Full TypeScript implementation with strongly typed interfaces for all requests and responses
-- Type definitions available for:
-  - `ArticleRequest`: Blueprint parameters with optional filters
-  - `ArticleResponse`: Article results with metadata
-  - `Article`: Comprehensive article data structure
-  - Supporting types for the E-utilities service
+## Full Text Content Retrieval
+
+The service attempts to enhance article content by:
+- Fetching clean abstracts from PubMed E-utilities
+- Retrieving full text content when available via DOI links
+- Extracting article content from PubMed pages
+- Cleaning and structuring the content for better readability
 
 ## Running the Application
 
 ```bash
+# Install dependencies
+npm install
+
 # Build the TypeScript code
 npm run build
 
@@ -323,7 +364,7 @@ Content-Type: application/json
 }
 ```
 
-This will return ranked articles related to heart failure and hypertension from high-quality cardiology journals, published within the last 5 years.
+This will return ranked articles related to heart failure and hypertension from high-quality cardiology journals, published within the last 2 years.
 
 ## License
 
