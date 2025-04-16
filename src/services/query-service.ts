@@ -77,12 +77,20 @@ class QueryService {
         return `("${topic}"[Title/Abstract] OR "${topic}"[All Fields])`;
       }
       
-      // If we have MeSH terms, create a more precise query
-      const mesh_query = mesh_terms.map(term => 
-        `"${term}"[MeSH Terms] OR "${term}"[Title/Abstract]`
-      ).join(' OR ');
+      // Build better queries using both MeSH terms and text searches
+      const mesh_query_parts = [];
       
-      return `(${mesh_query})`;
+      // Add proper MeSH term queries
+      mesh_terms.forEach(term => {
+        mesh_query_parts.push(`"${term}"[MeSH Terms]`);
+        mesh_query_parts.push(`"${term}"[Title/Abstract]`);
+      });
+      
+      // Always include the original term as a text search
+      mesh_query_parts.push(`"${topic}"[Title/Abstract]`);
+      mesh_query_parts.push(`"${topic}"[All Fields]`);
+      
+      return `(${mesh_query_parts.join(' OR ')})`;
     });
 
     // Join topics with OR (since we want articles that mention any of the topics)

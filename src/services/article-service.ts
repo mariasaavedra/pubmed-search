@@ -1,6 +1,8 @@
 import BlueprintService from "./blueprint-service";
 import QueryService from "./query-service";
 import PubmedService from "./pubmed-service";
+import EmbeddingService from "./embedding.service";
+import JournalRankingService from "./journal-ranking.service";
 import { ArticleRequest, ArticleResponse } from "../types";
 import { Logger } from "../utils/logger";
 
@@ -11,11 +13,17 @@ class ArticleService {
   private blueprint_service: BlueprintService;
   private query_service: QueryService;
   private pubmed_service: PubmedService;
+  private embedding_service: EmbeddingService;
+  private journal_ranking: JournalRankingService;
 
   constructor() {
     this.blueprint_service = new BlueprintService();
     this.query_service = new QueryService();
     this.pubmed_service = new PubmedService();
+    this.embedding_service = new EmbeddingService();
+    this.journal_ranking = new JournalRankingService();
+    
+    Logger.debug("ArticleService", "Initialized with relevance ranking and journal quality scoring");
   }
 
   /**
@@ -65,12 +73,37 @@ class ArticleService {
 
     // Fetch article details
     const articles = await this.pubmed_service.fetchArticleDetails(pmids);
+    
+    // Add journal quality scores
+    Logger.debug("ArticleService", "Adding journal quality scores");
+    const articlesWithJournalScores = articles.map(article => ({
+      ...article,
+      scores: {
+        ...article.scores,
+        journal_impact: this.journal_ranking.getJournalScore(article.journal)
+      }
+    }));
+    
+    // Rank articles by relevance using embeddings
+    Logger.debug("ArticleService", "Ranking articles by relevance using embeddings");
+    const searchQuery = article_request.specialty + (article_request.topics ? " " + article_request.topics.join(" ") : "");
+    const rankedArticles = await this.embedding_service.rankArticlesByRelevance(
+      searchQuery,
+      articlesWithJournalScores
+    );
+    
+    // Log tier information for debugging
+    rankedArticles.forEach(article => {
+      const tier = this.journal_ranking.getJournalTier(article.journal);
+      Logger.debug("ArticleService", `Journal: "${article.journal}" -> Tier: ${tier}, Score: ${article.scores.journal_impact.toFixed(2)}`);
+    });
+    
     const duration = Date.now() - start_time;
 
-    Logger.success("ArticleService", `Request completed in ${duration}ms, returning ${articles.length} articles`);
+    Logger.success("ArticleService", `Request completed in ${duration}ms, returning ${rankedArticles.length} articles`);
 
     return {
-      articles: articles,
+      articles: rankedArticles,
       meta: {
         total: total_count,
         processing_time: duration,

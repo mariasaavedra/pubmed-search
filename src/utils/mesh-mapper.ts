@@ -56,7 +56,13 @@ class MeshMapper {
       "hiv": ["HIV", "AIDS", "HIV Infections"],
       "tuberculosis": ["Tuberculosis", "TB"],
       "malaria": ["Malaria"],
-      "covid": ["COVID-19", "SARS-CoV-2", "Coronavirus"]
+      "covid": ["COVID-19", "SARS-CoV-2", "Coronavirus"],
+      "antiplatelet therapy": ["Platelet Aggregation Inhibitors", "Antiplatelet Agents"],
+      "acute coronary syndrome": ["Acute Coronary Syndrome", "Myocardial Infarction"],
+      "coronary artery disease": ["Coronary Artery Disease", "Coronary Disease"],
+      "tricuspid valve disease": ["Tricuspid Valve Insufficiency", "Heart Valve Diseases"],
+      "spontaneous coronary artery dissection": ["Coronary Vessel Anomalies", "Vascular Diseases"],
+      "hyperaldosteronism": ["Hyperaldosteronism", "Adrenal Gland Diseases"]
     };
 
     // Check if we have an exact match
@@ -66,8 +72,8 @@ class MeshMapper {
       }
     }
 
-    // If no match, return the original term formatted for PubMed search
-    return [`"${term}"[All Fields]`];
+    // If no match, return the original term without MeSH formatting
+    return [term];
   }
 
   /**
