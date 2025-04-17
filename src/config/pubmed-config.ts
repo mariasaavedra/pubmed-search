@@ -14,7 +14,7 @@ export const PUBMED_CONFIG = {
   esummary: "/esummary.fcgi",
 
   page_limit: 1,
-  page_size: 5,
+  page_size: 20,
   rate_limit: {
     // With API key: Up to 10 requests/second
     // Without API key: Limited to 3 requests/second

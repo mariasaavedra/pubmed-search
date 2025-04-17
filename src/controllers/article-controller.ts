@@ -43,7 +43,7 @@ class ArticleController {
 
       // Handle pagination
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = parseInt(req.query.limit as string) || 20; // Increased from 10 to 20
       const requestData = {
         ...req.body,
         page,
@@ -144,7 +144,7 @@ class ArticleController {
 
       // Handle pagination
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = parseInt(req.query.limit as string) || 20; // Increased from 10 to 20
 
       // Get suggested topics for the specialty but limit them to avoid URL too long errors
       const { topics: allTopics } = this.article_service.getSuggestedTopics(

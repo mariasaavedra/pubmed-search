@@ -172,7 +172,7 @@
     </div>
 
     <div class="results-container" id="results">
-      <h2>Search Results</h2>
+      <h2>Search Results (Showing up to 20 articles per page)</h2>
       <div id="articles-container"></div>
 
       <div class="pagination" id="pagination">
@@ -274,7 +274,7 @@
           console.log("Searching for articles in specialty:", specialty);
 
           // Make API request
-          fetch(`/api/articles/specialty?page=${page}&limit=10`, {
+          fetch(`/api/articles/specialty?page=${page}&limit=20`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

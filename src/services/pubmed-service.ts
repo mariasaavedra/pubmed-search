@@ -210,10 +210,12 @@ class PubmedService {
 
   /**
    * Fetch article details by PMID
+   * Process in batches to handle large requests more efficiently
    * @param pmids Array of PubMed IDs
+   * @param batchSize Maximum number of articles to fetch in a single API call
    * @returns Array of article details
    */
-  public async fetchArticleDetails(pmids: string[]): Promise<Article[]> {
+  public async fetchArticleDetails(pmids: string[], batchSize: number = 20): Promise<Article[]> {
     if (pmids.length === 0) {
       Logger.debug("PubmedService", "No PMIDs provided, returning empty array");
       return [];
@@ -221,9 +223,53 @@ class PubmedService {
 
     Logger.debug(
       "PubmedService",
-      `Fetching details for ${pmids.length} articles`
+      `Fetching details for ${pmids.length} articles with batch size ${batchSize}`
     );
 
+    try {
+      // If the number of PMIDs is within the batch size, process directly
+      if (pmids.length <= batchSize) {
+        return this.fetchArticleBatch(pmids);
+      }
+      
+      // Otherwise, process in batches
+      Logger.debug("PubmedService", `Splitting request into ${Math.ceil(pmids.length / batchSize)} batches`);
+      
+      const allArticles: Article[] = [];
+      
+      // Process batches sequentially to avoid overwhelming the API
+      for (let i = 0; i < pmids.length; i += batchSize) {
+        const batchPmids = pmids.slice(i, i + batchSize);
+        Logger.debug("PubmedService", `Processing batch ${Math.floor(i / batchSize) + 1} with ${batchPmids.length} PMIDs`);
+        
+        const batchArticles = await this.fetchArticleBatch(batchPmids);
+        allArticles.push(...batchArticles);
+        
+        // Add a small delay between batches to avoid rate limiting
+        if (i + batchSize < pmids.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      Logger.debug(
+        "PubmedService",
+        `Successfully extracted ${allArticles.length} article details across all batches`
+      );
+      
+      return allArticles;
+    } catch (error) {
+      Logger.error("PubmedService", "Error fetching article details", error);
+      throw new Error("Failed to fetch article details from PubMed");
+    }
+  }
+  
+  /**
+   * Fetch a single batch of article details
+   * @param pmids Array of PubMed IDs for a single batch
+   * @returns Array of article details for the batch
+   * @private
+   */
+  private async fetchArticleBatch(pmids: string[]): Promise<Article[]> {
     try {
       // Use EFetch to get articles in XML format
       const xmlDoc = await this.eutils.efetchXML({
@@ -236,12 +282,12 @@ class PubmedService {
       
       Logger.debug(
         "PubmedService",
-        `Successfully extracted ${articles.length} article details`
+        `Successfully extracted ${articles.length} article details for batch`
       );
 
       return articles;
     } catch (error) {
-      Logger.error("PubmedService", "Error fetching article details", error);
+      Logger.error("PubmedService", "Error fetching batch article details", error);
       throw new Error("Failed to fetch article details from PubMed");
     }
   }

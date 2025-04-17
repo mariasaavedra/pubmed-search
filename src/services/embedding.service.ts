@@ -279,23 +279,59 @@ class EmbeddingService {
   
   /**
    * Get embeddings for multiple strings in one API call
-   * Handles batching if there are too many texts
+   * Enhanced batching to efficiently handle larger sets of articles (up to 20)
    * @param texts Array of texts to embed
    * @returns Array of vector embeddings
    */
   private async getEmbeddings(texts: string[]): Promise<number[][]> {
+    // OpenAI's API can handle up to 2048 inputs per request, but we'll be more conservative
+    const OPTIMAL_BATCH_SIZE = 15; // Reduced from 20 to allow for more margin with large texts
+    
     // Handle the case where there are too many texts for one API call
-    if (texts.length > 20) {
-      // Process in batches of 20
+    if (texts.length > OPTIMAL_BATCH_SIZE) {
+      Logger.debug('EmbeddingService', `Splitting ${texts.length} texts into batches of ${OPTIMAL_BATCH_SIZE}`);
+      
+      // Process in batches of OPTIMAL_BATCH_SIZE
       const results: number[][] = [];
-      for (let i = 0; i < texts.length; i += 20) {
-        const batch = texts.slice(i, i + 20);
-        const batchResults = await this.getEmbeddings(batch);
-        results.push(...batchResults);
+      const batches: string[][] = [];
+      
+      // Split into batches
+      for (let i = 0; i < texts.length; i += OPTIMAL_BATCH_SIZE) {
+        batches.push(texts.slice(i, i + OPTIMAL_BATCH_SIZE));
       }
+      
+      Logger.debug('EmbeddingService', `Created ${batches.length} batches for processing`);
+      
+      // Process batches with Promise.all for better parallelization
+      const batchPromises = batches.map(async (batch, index) => {
+        Logger.debug('EmbeddingService', `Processing batch ${index + 1}/${batches.length}`);
+        try {
+          const response = await this.openai.embeddings.create({
+            model: "text-embedding-3-small",
+            input: batch,
+            dimensions: 1536 // Default dimension for the model
+          });
+          
+          return response.data.map(item => item.embedding);
+        } catch (error) {
+          Logger.error('EmbeddingService', `Error in batch ${index + 1}`, error);
+          // Return empty embeddings on error to maintain array structure
+          return batch.map(() => Array(1536).fill(0));
+        }
+      });
+      
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Flatten the results
+      for (const batchResult of batchResults) {
+        results.push(...batchResult);
+      }
+      
+      Logger.debug('EmbeddingService', `Successfully processed all ${batches.length} batches`);
       return results;
     }
     
+    // If we have a small number of texts, process directly
     try {
       const response = await this.openai.embeddings.create({
         model: "text-embedding-3-small",
