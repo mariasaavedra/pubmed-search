@@ -356,9 +356,7 @@
               const journal = document.createElement("p");
               journal.className = "journal-info";
               journal.textContent = `${article.journal}${
-                article.pub_date
-                  ? " • " + formatDate(article.pub_date)
-                  : ""
+                article.pub_date ? " • " + formatDate(article.pub_date) : ""
               }`;
               articleElement.appendChild(journal);
             }
@@ -396,7 +394,18 @@
 
               articleElement.appendChild(meshTermsContainer);
             }
-            
+
+            // Display score.relevance * 100 and also the selected_explanation
+            if (article.scores.relevance && article.selection_explanation) {
+              const score = document.createElement("p");
+              score.className = "article-meta";
+              score.textContent = `Relevance: ${(article.scores.relevance * 100).toFixed(
+                2
+              )}% - ${article.selection_explanation}`;
+              articleElement.appendChild(score);
+            }
+           
+
             // Link to PubMed
             if (article.pmid) {
               const link = document.createElement("p");

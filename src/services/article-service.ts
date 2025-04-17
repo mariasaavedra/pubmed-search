@@ -5,6 +5,7 @@ import EmbeddingService from "./embedding.service";
 import JournalRankingService from "./journal-ranking.service";
 import CategoryMapperService from "./category-mapper.service";
 import SpecialtyFilterService from "./specialty-filter.service";
+import ExplanationService from "./explanation.service";
 import { ArticleRequest, ArticleResponse, Article } from "../types";
 import { Logger } from "../utils/logger";
 
@@ -19,6 +20,7 @@ class ArticleService {
   private journal_ranking: JournalRankingService;
   private category_mapper: CategoryMapperService;
   private specialty_filter: SpecialtyFilterService;
+  private explanation_service: ExplanationService;
 
   constructor() {
     this.blueprint_service = new BlueprintService();
@@ -28,8 +30,9 @@ class ArticleService {
     this.journal_ranking = new JournalRankingService();
     this.category_mapper = new CategoryMapperService();
     this.specialty_filter = new SpecialtyFilterService();
+    this.explanation_service = new ExplanationService();
     
-    Logger.debug("ArticleService", "Initialized with relevance ranking, journal quality scoring, and content categorization");
+    Logger.debug("ArticleService", "Initialized with relevance ranking, journal quality scoring, content categorization, and article explanations");
   }
 
   /**
@@ -149,12 +152,30 @@ class ArticleService {
       Logger.debug("ArticleService", `Journal: "${article.journal}" -> Type: ${tierName}, Score: ${article.scores.journal_impact.toFixed(2)}`);
     });
     
+    // Add explanations and convert relevance scores to 1-5 scale
+    Logger.debug("ArticleService", "Adding article explanations and relevance scale scores");
+    
+    const articlesWithExplanations = rankedArticles.map(article => {
+      return {
+        ...article,
+        scores: {
+          ...article.scores,
+          relevance_scale: this.explanation_service.convertRelevanceToScale(article.scores.relevance)
+        },
+        selection_explanation: this.explanation_service.generateArticleExplanation(
+          article,
+          searchQuery,
+          article_request.specialty
+        )
+      };
+    });
+    
     const duration = Date.now() - start_time;
 
-    Logger.success("ArticleService", `Request completed in ${duration}ms, returning ${rankedArticles.length} articles`);
+    Logger.success("ArticleService", `Request completed in ${duration}ms, returning ${articlesWithExplanations.length} articles with explanations`);
 
     return {
-      articles: rankedArticles,
+      articles: articlesWithExplanations,
       meta: {
         total: total_count,
         processing_time: duration,

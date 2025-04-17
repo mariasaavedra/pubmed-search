@@ -76,7 +76,9 @@ export interface Article {
   scores: {
     relevance: number;
     journal_impact: number;
+    relevance_scale?: number; // New field: 1-5 scale
   };
+  selection_explanation?: string; // New field: explanation for why article was selected
   mesh_terms?: string[];                  // MeSH terms associated with the article
   mesh_qualifiers?: MeshQualifier[];      // Array of MeSH qualifiers with their descriptors
   publication_type?: string[];            // PubMed publication types array
@@ -204,6 +206,7 @@ export interface RankedArticleData extends Article {
   scores: {
     relevance: number;
     journal_impact: number;
+    relevance_scale?: number; // New field: 1-5 scale
   };
 }
 
