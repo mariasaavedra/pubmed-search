@@ -399,9 +399,9 @@
             if (article.scores.relevance && article.selection_explanation) {
               const score = document.createElement("p");
               score.className = "article-meta";
-              score.textContent = `Relevance: ${(article.scores.relevance * 100).toFixed(
+              score.textContent = `Relevance: ${(article.scores.relevance * 10).toFixed(
                 2
-              )}% - ${article.selection_explanation}`;
+              )} / 5 - ${article.selection_explanation}`;
               articleElement.appendChild(score);
             }
            

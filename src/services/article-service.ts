@@ -37,6 +37,8 @@ class ArticleService {
 
   /**
    * Get articles based on clinical blueprint
+   * Articles are ranked by relevance score as the primary criterion,
+   * with journal impact factor used as a tiebreaker when relevance scores are equal
    */
   public async getArticles(article_request: ArticleRequest): Promise<ArticleResponse> {
     const start_time = Date.now();
@@ -128,22 +130,23 @@ class ArticleService {
       }
     }));
     
-    // Rank articles by relevance using embeddings
-    Logger.debug("ArticleService", "Ranking articles by relevance using embeddings");
+    // Rank articles by relevance using embeddings - this will be our primary sorting factor
+    Logger.debug("ArticleService", "Ranking articles by relevance using embeddings as primary sort criterion");
     const searchQuery = article_request.specialty + (article_request.topics ? " " + article_request.topics.join(" ") : "");
     const articlesWithRelevance = await this.embedding_service.rankArticlesByRelevance(
       searchQuery,
       articlesWithJournalScores
     );
     
-    // Sort first by journal weight, then by relevance
+    // Sort articles by relevance score as primary criterion, with journal weight as tiebreaker
+    Logger.debug("ArticleService", "Sorting articles with relevance as primary factor and journal impact as secondary");
     const rankedArticles = articlesWithRelevance.sort((a, b) => {
-      // First sort by journal weight (higher first)
-      if (b.scores.journal_impact !== a.scores.journal_impact) {
-        return b.scores.journal_impact - a.scores.journal_impact;
+      // First sort by relevance (higher first)
+      if (b.scores.relevance !== a.scores.relevance) {
+        return b.scores.relevance - a.scores.relevance;
       }
-      // Then by relevance score
-      return b.scores.relevance - a.scores.relevance;
+      // Then by journal weight as tiebreaker
+      return b.scores.journal_impact - a.scores.journal_impact;
     });
     
     // Log journal information for debugging

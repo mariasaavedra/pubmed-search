@@ -5,6 +5,14 @@ import FullTextFetcherService from './full-text-fetcher.service';
 
 /**
  * Service for generating embeddings and ranking articles by semantic relevance
+ * 
+ * Enhanced embedding approach:
+ * - Combines article content (abstract or full text) with structured metadata
+ * - Incorporates MeSH terms, qualifiers, major topics, publication types, and categories
+ * - Improves semantic search by giving the embedding model more context about medical significance
+ * - Makes articles more discoverable through their metadata rather than just textual content
+ * - Particularly valuable for medical literature where structured metadata carries critical information
+ *   that might not be explicitly stated in the text (like study design, population type, etc.)
  */
 class EmbeddingService {
   private openai: OpenAI;
@@ -80,7 +88,9 @@ class EmbeddingService {
   }
 
   /**
-   * Rank articles by semantic similarity to the query
+   * Rank articles by semantic similarity to the query using content and metadata
+   * Incorporates article metadata (MeSH terms, qualifiers, publication types, categories)
+   * for improved semantic matching and relevance scoring
    * @param query The search query
    * @param articles Array of articles to rank
    * @returns Ranked articles with relevance scores
@@ -90,7 +100,7 @@ class EmbeddingService {
     articles: Article[]
   ): Promise<Article[]> {
     try {
-      Logger.debug('EmbeddingService', `Ranking ${articles.length} articles for query: "${query}"`);
+      Logger.debug('EmbeddingService', `Ranking ${articles.length} articles for query: "${query}" using content and metadata (MeSH terms, qualifiers, etc.)`);
       
       if (articles.length === 0) {
         return [];
@@ -102,17 +112,109 @@ class EmbeddingService {
       // Get query embedding
       const queryEmbedding = await this.getEmbedding(query);
       
+      // Count articles with various metadata
+      const metadataStats = {
+        withMeshTerms: 0,
+        withMeshQualifiers: 0,
+        withMajorTopics: 0,
+        withPublicationType: 0,
+        withCategories: 0,
+        withSpecialtyTags: 0
+      };
+      
       // Get article embeddings (one API call with batching)
       const articleContents = enhancedArticles.map(article => {
+        // Start with base content (title + abstract or full text)
+        let content = '';
+        
         // Use full text if available, otherwise use title + abstract
         if (article.full_text) {
-          // Limit to first 5000 characters to avoid token limits
-          return article.full_text.substring(0, 5000);
+          // Limit to first 4000 characters to leave room for metadata
+          content = article.full_text.substring(0, 4000);
         } else {
-          return `${article.title}. ${article.abstract}`;
+          content = `${article.title}. ${article.abstract}`;
         }
+        
+        // Prepare metadata sections
+        const metadataSections = [];
+        
+        // Add MeSH terms if available
+        if (article.mesh_terms && article.mesh_terms.length > 0) {
+          metadataSections.push(`MeSH Terms: ${article.mesh_terms.join(', ')}`);
+          metadataStats.withMeshTerms++;
+        }
+        
+        // Add MeSH qualifiers if available
+        if (article.mesh_qualifiers && article.mesh_qualifiers.length > 0) {
+          metadataStats.withMeshQualifiers++;
+          
+          // Extract major topics with qualifiers
+          const majorTopics = article.mesh_qualifiers
+            .filter(mq => mq.major_topic)
+            .map(mq => {
+              const qualifiers = mq.qualifiers.length > 0 
+                ? `(${mq.qualifiers.join(', ')})` 
+                : '';
+              return `${mq.descriptor}${qualifiers}`;
+            });
+          
+          if (majorTopics.length > 0) {
+            metadataSections.push(`Major Topics: ${majorTopics.join('; ')}`);
+            metadataStats.withMajorTopics++;
+          }
+        }
+        
+        // Add publication type if available
+        if (article.publication_type && article.publication_type.length > 0) {
+          metadataSections.push(`Publication Type: ${article.publication_type.join(', ')}`);
+          metadataStats.withPublicationType++;
+        }
+        
+        // Add primary and secondary categories if available
+        if (article.primary_category) {
+          metadataSections.push(`Primary Category: ${article.primary_category}`);
+          metadataStats.withCategories++;
+        }
+        
+        if (article.secondary_categories && article.secondary_categories.length > 0) {
+          metadataSections.push(`Secondary Categories: ${article.secondary_categories.join(', ')}`);
+          if (!article.primary_category) {
+            metadataStats.withCategories++;
+          }
+        }
+        
+        // Add specialty tags if available
+        if (article.specialty_tags && article.specialty_tags.length > 0) {
+          metadataSections.push(`Specialty Tags: ${article.specialty_tags.join(', ')}`);
+          metadataStats.withSpecialtyTags++;
+        }
+        
+        // Combine all metadata sections with the main content
+        if (metadataSections.length > 0) {
+          const metadataText = metadataSections.join('\n');
+          
+          // Combine content with metadata, ensuring the total is under 5000 characters
+          const combinedContent = `${content}\n\nMetadata:\n${metadataText}`;
+          
+          // Final length check to stay under token limits
+          return combinedContent.length > 5000 
+            ? combinedContent.substring(0, 5000) 
+            : combinedContent;
+        }
+        
+        return content;
       });
       
+      // Log metadata statistics to understand data quality
+      Logger.debug('EmbeddingService', `Metadata statistics for ${enhancedArticles.length} articles:
+        - With MeSH terms: ${metadataStats.withMeshTerms} (${Math.round(metadataStats.withMeshTerms/enhancedArticles.length*100)}%)
+        - With MeSH qualifiers: ${metadataStats.withMeshQualifiers} (${Math.round(metadataStats.withMeshQualifiers/enhancedArticles.length*100)}%)
+        - With major topics: ${metadataStats.withMajorTopics} (${Math.round(metadataStats.withMajorTopics/enhancedArticles.length*100)}%)
+        - With publication types: ${metadataStats.withPublicationType} (${Math.round(metadataStats.withPublicationType/enhancedArticles.length*100)}%)
+        - With categories: ${metadataStats.withCategories} (${Math.round(metadataStats.withCategories/enhancedArticles.length*100)}%)
+        - With specialty tags: ${metadataStats.withSpecialtyTags} (${Math.round(metadataStats.withSpecialtyTags/enhancedArticles.length*100)}%)`);
+      
+      Logger.debug('EmbeddingService', 'Generating embeddings for content+metadata to improve semantic search quality');
       const articleEmbeddings = await this.getEmbeddings(articleContents);
       
       // Calculate similarities between query and each article
@@ -132,9 +234,22 @@ class EmbeddingService {
       });
       
       // Sort by relevance score (highest first)
-      return scoredArticles.sort((a, b) => 
+      const sortedArticles = scoredArticles.sort((a, b) => 
         b.scores.relevance - a.scores.relevance
       );
+      
+      // Log statistics about relevance scores
+      const avgScore = sortedArticles.reduce((sum, article) => sum + article.scores.relevance, 0) / sortedArticles.length;
+      
+      // Calculate high-relevance percentage (articles with score > 0.5)
+      const highRelevanceCount = sortedArticles.filter(a => a.scores.relevance > 0.5).length;
+      const highRelevancePercent = Math.round((highRelevanceCount / sortedArticles.length) * 100);
+      
+      Logger.debug('EmbeddingService', `Completed relevance ranking with metadata-enhanced embeddings. 
+        Average relevance score: ${avgScore.toFixed(4)}
+        High relevance articles (>0.5): ${highRelevanceCount}/${sortedArticles.length} (${highRelevancePercent}%)`);
+      
+      return sortedArticles;
     } catch (error) {
       Logger.error('EmbeddingService', 'Error ranking articles by relevance', error);
       // Fallback: return original articles without ranking
